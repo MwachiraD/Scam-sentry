@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+{% load socialaccount %}
+{% load static %}
+
+{% block title %}Login{% endblock %}
+
+{% block content %}
+<div class="text-center my-3">
+  <img src="{% static 'Scam_reports/images/logo.png' %}" alt="Scam Sentry Logo" class="logo">
+</div>
+
+<div class="container login-card">
+  <div class="card shadow">
+    <div class="card-body">
+      <h3 class="card-title text-center mb-4">Login</h3>
+
+      {% if form.errors %}
+        <div class="alert alert-danger">Invalid login credentials</div>
+      {% endif %}
+
+      <form method="POST" action="{% url 'account_login' %}">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="btn btn-primary w-100">Login</button>
+      </form>
+
+      <hr>
+      <p class="text-center">or</p>
+
+    
+
+{% load socialaccount %}
+{% provider_login_url 'google' process='login' as google_login_url %}
+
+<a href="{{ google_login_url }}?next=/dashboard/" class="btn btn-danger w-100 mb-2">
+  <i class="fab fa-google"></i> Login with Google
+</a>
+
+
+
+      <div class="text-center">
+        <p>Don't have an account? <a href="{% url 'account_signup' %}">Register</a></p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function openGooglePopup(url) {
+  
+}
+  
+</script>
+
+
+{% endblock %}

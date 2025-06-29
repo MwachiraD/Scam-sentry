@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+
+{% block title %}Scam Reports{% endblock %}
+
+{% block content %}
+<h1 class="mb-4 text-center text-primary">All Scam Reports</h1>
+
+<form method="GET" class="mb-4 d-flex justify-content-center">
+  <input type="text" name="q" class="form-control me-2 w-50" placeholder="Search by name, number, or social media">
+  <button type="submit" class="btn btn-primary">Search</button>
+</form>
+
+<form method="get" class="mb-4">
+  <label class="me-2 fw-bold">Filter by Status:</label>
+  <select name="filter" onchange="this.form.submit()" class="form-select w-auto d-inline-block">
+    <option value="all" {% if filter_option == 'all' %}selected{% endif %}>All</option>
+    <option value="resolved" {% if filter_option == 'resolved' %}selected{% endif %}>Resolved</option>
+    <option value="unresolved" {% if filter_option == 'unresolved' %}selected{% endif %}>Unresolved</option>
+  </select>
+</form>
+
+<div class="row">
+  {% for report in reports %}
+  <div class="col-md-6 mb-4">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h2 class="card-title text-danger">{{ report.name_or_number }}</h2>
+        <h5 class="card-subtitle mb-2 text-muted">{{ report.social_media }}</h5>
+        <p class="card-text">{{ report.description }}</p>
+
+        <strong>Scam types:</strong>
+        {% for scam in report.scam_type.all %}
+          <span class="badge bg-warning text-dark">{{ scam.name }}</span>
+          {% if not forloop.last %}, {% endif %}
+        {% endfor %}<br>
+
+        <strong>Reported:</strong> {{ report.date_reported|date:"M d, Y H:i" }}<br>
+        <strong>Resolved:</strong>
+        {% if report.is_resolved %}
+          <span class="badge bg-success mb-2">✅ Resolved</span>
+        {% else %}
+          <form action="{% url 'mark_resolved' report.id %}" method="post" style="display:inline;">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-sm btn-success mt-2">Mark as Resolved</button>
+          </form>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  {% empty %}
+    <p>No reports submitted.</p>
+  {% endfor %}
+</div>
+{% endblock %}

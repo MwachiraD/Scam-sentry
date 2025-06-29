@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% load socialaccount %}
+{% load static %}
+
+{% block title %}Register{% endblock %}
+
+{% block content %}
+<div class="text-center my-3">
+  <img src="{% static 'Scam_reports/images/logo.png' %}" alt="Scam Sentry Logo" class="logo">
+</div>
+
+<div class="container signup-card">
+  <div class="card shadow">
+    <div class="card-body">
+      <h3 class="card-title text-center mb-4">Register</h3>
+
+      <form method="POST" action="{% url 'account_signup' %}">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="btn btn-success w-100">Register</button>
+      </form>
+
+      <hr>
+      <p class="text-center">or</p>
+{% provider_login_url 'google' process='signup' as google_signup_url %}
+
+<a href="{{ google_signup_url }}?next=/" class="btn btn-success w-100 mb-2">
+  <i class="fab fa-google"></i> Register with Google
+</a>
+
+
+
+      <div class="text-center">
+        <p>Already have an account? <a href="{% url 'account_login' %}">Login</a></p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function openGooglePopup(url) {
+  
+}
+</script>
+
+{% endblock %}

@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Login successful</title>
+</head>
+<body>
+  <p>Login successful. Redirecting...</p>
+
+  <script>
+    try {
+      localStorage.setItem("google_login_done", "true");
+    } catch (e) {
+      console.log("localStorage error:", e);
+    }
+
+    setTimeout(() => {
+      window.close();
+    }, 500);  
+    localStorage.removeItem("google_login_done");
+
+  </script>
+</body>
+</html>
