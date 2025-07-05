@@ -28,22 +28,37 @@
         <h5 class="card-subtitle mb-2 text-muted">{{ report.social_media }}</h5>
         <p class="card-text">{{ report.description }}</p>
 
-        <strong>Scam types:</strong>
+        <p><strong>Scam Types:</strong>
         {% for scam in report.scam_type.all %}
           <span class="badge bg-warning text-dark">{{ scam.name }}</span>
-          {% if not forloop.last %}, {% endif %}
-        {% endfor %}<br>
+        {% endfor %}</p>
 
-        <strong>Reported:</strong> {{ report.date_reported|date:"M d, Y H:i" }}<br>
-        <strong>Resolved:</strong>
-        {% if report.is_resolved %}
-          <span class="badge bg-success mb-2">✅ Resolved</span>
-        {% else %}
-          <form action="{% url 'mark_resolved' report.id %}" method="post" style="display:inline;">
-            {% csrf_token %}
-            <button type="submit" class="btn btn-sm btn-success mt-2">Mark as Resolved</button>
-          </form>
+        {% if report.evidence_text %}
+          <p><strong>Evidence Text:</strong> {{ report.evidence_text }}</p>
         {% endif %}
+
+        {% if report.evidence_file %}
+          <p><strong>Evidence File:</strong> 
+            <a href="{{ report.evidence_file.url }}" target="_blank" class="btn btn-sm btn-outline-secondary">
+              📄 View Evidence
+            </a>
+          </p>
+        {% endif %}
+
+        {% if report.is_whistleblower %}
+          <p><span class="badge bg-dark text-light">🕵️ Anonymous Whistleblower</span></p>
+        {% endif %}
+
+        <p><strong>Reported:</strong> {{ report.date_reported|date:"M d, Y H:i" }}</p>
+
+        <p><strong>Status:</strong>
+          {% if report.is_resolved %}
+            <span class="badge bg-success">✅ Resolved</span>
+          {% else %}
+            <span class="badge bg-danger">❌ Not Resolved</span>
+          {% endif %}
+        </p>
+
       </div>
     </div>
   </div>

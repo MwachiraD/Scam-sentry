@@ -6,7 +6,8 @@ from django.contrib import messages
 from django.contrib.auth import login
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.decorators import login_required
-from .forms import Scamreportform  # match exactly
+from .forms import Scamreportform  
+from django.http import JsonResponse
 
 form = Scamreportform(...)  
 
@@ -17,21 +18,37 @@ form = Scamreportform(...)
 @login_required
 def google_popup_callback(request):
     return render(request, "popup_close.html")
+from django.http import JsonResponse
+from django.shortcuts import render, redirect
+from .forms import Scamreportform
+
 def report_scam(request):
-    if request.method=='POST':
-        form = Scamreportform(request.POST , request.FILES)
+    if request.method == 'POST':
+        form = Scamreportform(request.POST, request.FILES)
         if form.is_valid():
-            scamreport=form.save(commit=False)
+            scamreport = form.save(commit=False)
             if request.user.is_authenticated:
                 scamreport.user = request.user
+            else:
+                scamreport.is_whistleblower = True  # Handle anonymous users
+
             scamreport.save()
             form.save_m2m()
-            return redirect('thank_you')
-    else:
-            form=Scamreportform()
 
+            if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+                return JsonResponse({'status': 'ok', 'message': 'Report submitted successfully'})
 
-    return render(request, 'Scam_reports/report_scam.html',{'form': form})
+            return redirect('thank_you')  # fallback for non-JS users
+
+        else:
+            # Form is invalid
+            if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+                return JsonResponse({'status': 'error', 'errors': form.errors}, status=400)
+
+    # GET request or non-POST fallback
+    form = Scamreportform()
+    return render(request, 'Scam_reports/report_scam.html', {'form': form})
+
 
 def report_list(request):
     reports=Scamreports.objects.all().order_by ('-date_reported')

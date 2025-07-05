@@ -17,7 +17,17 @@
             <h4 class="card-title text-danger">{{ report.name_or_number }}</h4>
             <p class="card-subtitle text-muted">{{ report.social_media }}</p>
             <p>{{ report.description }}</p>
+{% if report.evidence_text %}
+          <p><strong>Evidence Text:</strong> {{ report.evidence_text }}</p>
+        {% endif %}
 
+        {% if report.evidence_file %}
+          <p><strong>Evidence File:</strong> 
+            <a href="{{ report.evidence_file.url }}" target="_blank" class="btn btn-sm btn-outline-secondary">
+              📄 View Evidence
+            </a>
+          </p>
+        {% endif %}
             <p>
               <strong>Scam Types:</strong>
               {% for scam in report.scam_type.all %}

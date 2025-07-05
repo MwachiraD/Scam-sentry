@@ -5,7 +5,7 @@
 {% block content %}
 <h1 class="text-center mb-4 text-primary">Report a Scam</h1>
 
-<form method="POST" enctype="multipart/form-data" class="p-4 border rounded bg-white shadow-sm">
+<form method="POST" id="scamReportForm" enctype="multipart/form-data" class="p-4 border rounded bg-white shadow-sm">
   {% csrf_token %}
   {% for field in form %}
     {% if field.name == "scam_type" %}
@@ -62,7 +62,48 @@
       </div>
     {% endif %}
   {% endfor %}
-
+<div class="text-center mt-2">
+  <div id="spinner" class="spinner-border text-success" style="display: none;" role="status">
+    <span class="visually-hidden">Loading...</span>
+  </div>
+  
+</div>
   <button type="submit" class="btn btn-primary">Submit Report</button>
 </form>
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const form = document.getElementById("scamReportForm");
+    const spinner = document.getElementById("spinner");
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      spinner.style.display = "inline-block";
+
+      const formData = new FormData(form);
+
+      try {
+        const response = await fetch("{% url 'report_scam' %}", {
+          method: "POST",
+          body: formData,
+          headers: {
+            "X-Requested-With": "XMLHttpRequest"
+          }
+        });
+
+        if (response.ok) {
+          alert("✅ Report submitted successfully!");
+          form.reset();
+        } else {
+          alert("❌ Submission failed. Please try again.");
+        }
+      } catch (error) {
+        console.error("Error:", error);
+        alert("⚠️ Something went wrong.");
+      } finally {
+        spinner.style.display = "none";
+      }
+    });
+  });
+</script>
+
 {% endblock %}
