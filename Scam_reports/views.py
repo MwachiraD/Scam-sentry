@@ -40,15 +40,20 @@ from Scam_reports.utils import ensure_google_social_app
 
 def report_scam(request):
     ensure_google_social_app()
-    
+
+    # ⬇️ Make sure scam_type choices are always correct
+    scam_type_queryset = Scamtype.objects.all()
+
     if request.method == 'POST':
         form = Scamreportform(request.POST, request.FILES)
+        form.fields['scam_type'].queryset = scam_type_queryset  # 🔥 force update
+
         if form.is_valid():
             scamreport = form.save(commit=False)
             if request.user.is_authenticated:
                 scamreport.user = request.user
             else:
-                scamreport.is_whistleblower = True  # Handle anonymous users
+                scamreport.is_whistleblower = True
 
             scamreport.save()
             form.save_m2m()
@@ -56,18 +61,15 @@ def report_scam(request):
             if request.headers.get('x-requested-with') == 'XMLHttpRequest':
                 return JsonResponse({'status': 'ok', 'message': 'Report submitted successfully'})
 
-            return redirect('thank_you')  # fallback for non-JS users
-
+            return redirect('thank_you')
         else:
-            # 🟠 Log form errors to console (Render will show them in logs)
-            print("❌ Form is invalid")
-            print("⚠️ Form errors:", form.errors)
-
             if request.headers.get('x-requested-with') == 'XMLHttpRequest':
                 return JsonResponse({'status': 'error', 'errors': form.errors}, status=400)
 
-    # GET request or non-POST fallback
-    form = Scamreportform()
+    else:
+        form = Scamreportform()
+        form.fields['scam_type'].queryset = scam_type_queryset  # 🔥 again for GET form
+
     return render(request, 'Scam_reports/report_scam.html', {'form': form})
 
 
