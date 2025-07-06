@@ -14,6 +14,8 @@ from django.http import HttpResponse
 from allauth.socialaccount.models import SocialApp
 from django.contrib.sites.models import Site
 from decouple import config
+from .utils import ensure_google_social_app
+
 
 form = Scamreportform(...)  
 
@@ -32,8 +34,10 @@ def create_scam_types(request):
     for t in types:
         Scamtype.objects.get_or_create(name=t)
     return HttpResponse("✅ Scam types created.")
+from Scam_reports.utils import ensure_google_social_app
 
 def report_scam(request):
+    ensure_google_social_app()
     if request.method == 'POST':
         form = Scamreportform(request.POST, request.FILES)
         if form.is_valid():
@@ -128,6 +132,8 @@ def edit_report(request, pk):
     return render(request, 'edit_report.html', {'form': form})
 
 def create_google_socialapp(request):
+    ensure_google_social_app()
+
     site = Site.objects.get(id=1)
 
     app, created = SocialApp.objects.get_or_create(
