@@ -4,6 +4,8 @@ from .views import report_scam , thank_you ,mark_resolved, user_dashboard
 from django.contrib.auth import views as auth_views
 from django.views.generic import TemplateView
 from django.http import HttpResponse
+from .views import create_scam_types
+
 
 urlpatterns=[
     path('', views.report_scam, name ='report_scam'),
