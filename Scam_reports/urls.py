@@ -19,5 +19,7 @@ urlpatterns=[
     path('accounts/popup-close/', TemplateView.as_view(template_name='account/popup-close.html'), name='popup-close'),
     path('create-types/', create_scam_types),
     path('edit/<int:pk>/', views.edit_report, name='edit_report'),
+    path('create-scam-types/', create_scam_types),
+    
 
 ]
