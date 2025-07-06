@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-r)kt)2r#dxlhw*uebn%q%#m3qwu-yo+iv+07q8$ox$!45s@aqv
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '.ngrok-free.app']
 
 
 # Application definition
@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'allauth.account',
     'allauth.socialaccount',
     'allauth.socialaccount.providers.google',
+    "feedback"
 ]
 
 MIDDLEWARE = [
@@ -145,5 +146,16 @@ ACCOUNT_LOGOUT_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
 SOCIALACCOUNT_LOGIN_ON_GET = True
 ACCOUNT_SIGNUP_REDIRECT_URL = '/'
+
+
+
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'scamsentry068@gmail.com'
+EMAIL_HOST_PASSWORD = 'ezlfisvcjaykqmml'
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
 

@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}Thanks!{% endblock %}
+
+{% block content %}
+<div class="alert alert-success text-center">
+  <h4>🎉 Thank you for your feedback!</h4>
+  <a href="{% url 'report_scam' %}" class="btn btn-primary mt-3">Return to Home</a>
+</div>
+{% endblock %}

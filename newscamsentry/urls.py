@@ -23,6 +23,8 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('Scam_reports.urls')),
     path('accounts/', include('allauth.urls')), 
+    path('feedback/', include('feedback.urls')),
+
     
 ]
 

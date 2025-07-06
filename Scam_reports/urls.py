@@ -14,7 +14,7 @@ urlpatterns=[
     path('register/', views.register, name='register'),
     path('dashboard/', user_dashboard, name='user_dashboard'),
     path('accounts/popup-close/', TemplateView.as_view(template_name='account/popup-close.html'), name='popup-close'),
-    path("google-popup-callback/", views.google_popup_callback, name="google_popup_callback"),
+    
     path('edit/<int:pk>/', views.edit_report, name='edit_report'),
 
 ]

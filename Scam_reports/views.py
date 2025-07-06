@@ -15,12 +15,7 @@ form = Scamreportform(...)
 
 
 
-@login_required
-def google_popup_callback(request):
-    return render(request, "popup_close.html")
-from django.http import JsonResponse
-from django.shortcuts import render, redirect
-from .forms import Scamreportform
+
 
 def report_scam(request):
     if request.method == 'POST':
@@ -115,4 +110,7 @@ def edit_report(request, pk):
         form = Scamreportform(instance=report)
 
     return render(request, 'edit_report.html', {'form': form})
+
+
+
 
