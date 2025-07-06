@@ -34,10 +34,13 @@ def create_scam_types(request):
     for t in types:
         Scamtype.objects.get_or_create(name=t)
     return HttpResponse("✅ Scam types created.")
+
 from Scam_reports.utils import ensure_google_social_app
+
 
 def report_scam(request):
     ensure_google_social_app()
+    
     if request.method == 'POST':
         form = Scamreportform(request.POST, request.FILES)
         if form.is_valid():
@@ -56,7 +59,10 @@ def report_scam(request):
             return redirect('thank_you')  # fallback for non-JS users
 
         else:
-            # Form is invalid
+            # 🟠 Log form errors to console (Render will show them in logs)
+            print("❌ Form is invalid")
+            print("⚠️ Form errors:", form.errors)
+
             if request.headers.get('x-requested-with') == 'XMLHttpRequest':
                 return JsonResponse({'status': 'error', 'errors': form.errors}, status=400)
 
