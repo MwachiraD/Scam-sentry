@@ -20,6 +20,7 @@ urlpatterns=[
     path('create-types/', create_scam_types),
     path('edit/<int:pk>/', views.edit_report, name='edit_report'),
     path('create-scam-types/', create_scam_types),
+     path('create-scam-types/', create_scam_types, name='create_scam_types'),
     
 
 ]
