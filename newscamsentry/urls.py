@@ -18,12 +18,15 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from Scam_reports.views import create_scam_types
+
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('Scam_reports.urls')),
     path('accounts/', include('allauth.urls')), 
     path('feedback/', include('feedback.urls')),
+    path('create-scam-types/', create_scam_types),
 
     
 ]
