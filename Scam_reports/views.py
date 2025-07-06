@@ -25,11 +25,11 @@ form = Scamreportform(...)
 
 def create_scam_types(request):
     types = [
-        'Phishing', 'Impersonation', 'Fake Marketplace',
-        'Investment Scam', 'Fake Job', 'Online Dating Scam',
-        'M-Pesa Fraud', 'Social Media Scam', 'Advance Fee Scam',
+        'Phishing', 'Impersonation', 
+        'Investment Scam', 'Fake Job', 
+        
         'Romance Scam', 'Giveaway Scam', 'Crypto Scam',
-        'Tech Support Scam', 'Charity Scam', 'Fake Purchase Scam'
+        'Tech Support Scam', 'Charity Scam', 
     ]
     for t in types:
         Scamtype.objects.get_or_create(name=t)
