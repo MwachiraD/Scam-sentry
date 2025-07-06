@@ -3,8 +3,10 @@ services:
     name: scamsentry
     env: python
     plan: free
-    buildCommand: "pip install -r requirements.txt"
-    startCommand: "gunicorn newscamsentry.wsgi:application"
+    buildCommand: |
+      pip install -r requirements.txt
+      python manage.py collectstatic --noinput
+    startCommand: gunicorn newscamsentry.wsgi:application
     envVars:
       - key: SECRET_KEY
         sync: false
