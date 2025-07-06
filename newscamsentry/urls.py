@@ -16,8 +16,9 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
-from django.conf import settingsfrom django.conf.urls.static import static
-from Scam_reports.views import create_scam_types
+from django.conf import settings
+from django.conf.urls.static import static
+
 
 
 urlpatterns = [
