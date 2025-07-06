@@ -9,6 +9,7 @@ from django.contrib.auth.decorators import login_required
 from .forms import Scamreportform  
 from django.http import JsonResponse
 from django.http import HttpResponse
+from .models import ScamType
 
 form = Scamreportform(...)  
 
