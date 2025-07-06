@@ -8,6 +8,7 @@ from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.decorators import login_required
 from .forms import Scamreportform  
 from django.http import JsonResponse
+from django.http import HttpResponse
 
 form = Scamreportform(...)  
 
@@ -15,7 +16,17 @@ form = Scamreportform(...)
 
 
 
-
+def create_scam_types(request):
+    types = [
+        'Phishing', 'Impersonation', 'Fake Marketplace',
+        'Investment Scam', 'Fake Job', 'Online Dating Scam',
+        'M-Pesa Fraud', 'Social Media Scam', 'Advance Fee Scam',
+        'Romance Scam', 'Giveaway Scam', 'Crypto Scam',
+        'Tech Support Scam', 'Charity Scam', 'Fake Purchase Scam'
+    ]
+    for t in types:
+        ScamType.objects.get_or_create(name=t)
+    return HttpResponse("✅ Scam types created.")
 
 def report_scam(request):
     if request.method == 'POST':
