@@ -10,6 +10,10 @@ from .forms import Scamreportform
 from django.http import JsonResponse
 from django.http import HttpResponse
 from .models import Scamtype
+from django.http import HttpResponse
+from allauth.socialaccount.models import SocialApp
+from django.contrib.sites.models import Site
+from decouple import config
 
 form = Scamreportform(...)  
 
@@ -123,6 +127,16 @@ def edit_report(request, pk):
 
     return render(request, 'edit_report.html', {'form': form})
 
+def create_google_socialapp(request):
+    site = Site.objects.get(id=1)
 
+    app, created = SocialApp.objects.get_or_create(
+        provider='google',
+        name='Google',
+        client_id=config('GOOGLE_CLIENT_ID'),
+        secret=config('GOOGLE_CLIENT_SECRET')
+    )
+    app.sites.add(site)
+    return HttpResponse("✅ Google SocialApp created.")
 
 
