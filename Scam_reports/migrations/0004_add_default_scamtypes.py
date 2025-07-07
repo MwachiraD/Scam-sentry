@@ -19,7 +19,7 @@ def create_default_scam_types(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('Scam_reports', '0001_initial'),  # adjust if 0002 already exists
+        ('Scam_reports', '0001_initial'),  
     ]
 
     operations = [
