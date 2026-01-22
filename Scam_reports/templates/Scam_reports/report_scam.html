@@ -74,6 +74,7 @@
   document.addEventListener("DOMContentLoaded", () => {
     const form = document.getElementById("scamReportForm");
     const spinner = document.getElementById("spinner");
+    const csrfToken = form.querySelector('input[name="csrfmiddlewaretoken"]').value;
 
     form.addEventListener("submit", async (event) => {
       event.preventDefault();
@@ -86,7 +87,8 @@
           method: "POST",
           body: formData,
           headers: {
-            "X-Requested-With": "XMLHttpRequest"
+            "X-Requested-With": "XMLHttpRequest",
+            "X-CSRFToken": csrfToken
           }
         });
 

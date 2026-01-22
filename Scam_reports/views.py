@@ -1,26 +1,16 @@
-from django.http import HttpResponseForbidden
-from django.shortcuts import render , redirect ,get_object_or_404
-from.forms import Scamreportform
-from .models import Scamreports
-from django.contrib import messages 
+from django.contrib import messages
 from django.contrib.auth import login
-from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.decorators import login_required
-from .forms import Scamreportform  
-from django.http import JsonResponse
-from django.http import HttpResponse
-from .models import Scamtype
-from django.http import HttpResponse
+from django.contrib.auth.forms import UserCreationForm
+from django.db.models import Q
+from django.http import HttpResponse, HttpResponseForbidden, JsonResponse
+from django.shortcuts import get_object_or_404, redirect, render
 from allauth.socialaccount.models import SocialApp
 from django.contrib.sites.models import Site
 from decouple import config
+from .forms import Scamreportform
+from .models import Scamreports, Scamtype
 from .utils import ensure_google_social_app
-
-
-form = Scamreportform(...)  
-
-
-
 
 
 def create_scam_types(request):
@@ -34,9 +24,6 @@ def create_scam_types(request):
     for t in types:
         Scamtype.objects.get_or_create(name=t)
     return HttpResponse("✅ Scam types created.")
-
-from Scam_reports.utils import ensure_google_social_app
-
 
 def report_scam(request):
     ensure_google_social_app()
@@ -52,8 +39,6 @@ def report_scam(request):
             scamreport = form.save(commit=False)
             if request.user.is_authenticated:
                 scamreport.user = request.user
-            else:
-                scamreport.is_whistleblower = True
 
             scamreport.save()
             form.save_m2m()
@@ -74,27 +59,23 @@ def report_scam(request):
 
 
 def report_list(request):
-    reports=Scamreports.objects.all().order_by ('-date_reported')
-    query = request.GET.get('q') 
+    reports = Scamreports.objects.all()
+    query = request.GET.get('q')
     if query:
-        reports = Scamreports.objects.filter(
-            name_or_number__icontains=query
-        ) | Scamreports.objects.filter(
-            social_media__icontains=query
+        reports = reports.filter(
+            Q(name_or_number__icontains=query) |
+            Q(social_media__icontains=query)
         )
-    else:
-        reports = Scamreports.objects.all()
 
     filter_option = request.GET.get('filter', 'all')
 
     if filter_option == 'resolved':
-        reports = Scamreports.objects.filter(is_resolved=True)
+        reports = reports.filter(is_resolved=True)
     elif filter_option == 'unresolved':
-        reports = Scamreports.objects.filter(is_resolved=False)
-    else:
-        reports = Scamreports.objects.all()
+        reports = reports.filter(is_resolved=False)
 
-    return render(request, 'Scam_reports/report_list.html', {'reports': reports , 'filter_option': filter_option})
+    reports = reports.order_by('-date_reported')
+    return render(request, 'Scam_reports/report_list.html', {'reports': reports, 'filter_option': filter_option})
 
 def thank_you(request):
      return render (request , "thank_you.html")
@@ -133,7 +114,7 @@ def edit_report(request, pk):
         form = Scamreportform(request.POST, instance=report)
         if form.is_valid():
             form.save()
-            return redirect('dashboard')
+            return redirect('user_dashboard')
     else:
         form = Scamreportform(instance=report)
 
