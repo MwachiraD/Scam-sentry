@@ -23,17 +23,17 @@ def create_scam_types(request):
     ]
     for t in types:
         Scamtype.objects.get_or_create(name=t)
-    return HttpResponse("✅ Scam types created.")
+    return HttpResponse("Scam types created.")
 
 def report_scam(request):
     ensure_google_social_app()
 
-    # ⬇️ Make sure scam_type choices are always correct
+    # Make sure scam_type choices are always correct
     scam_type_queryset = Scamtype.objects.all()
 
     if request.method == 'POST':
         form = Scamreportform(request.POST, request.FILES)
-        form.fields['scam_type'].queryset = scam_type_queryset  # 🔥 force update
+        form.fields['scam_type'].queryset = scam_type_queryset
 
         if form.is_valid():
             scamreport = form.save(commit=False)
@@ -53,7 +53,7 @@ def report_scam(request):
 
     else:
         form = Scamreportform()
-        form.fields['scam_type'].queryset = scam_type_queryset  # 🔥 again for GET form
+        form.fields['scam_type'].queryset = scam_type_queryset
 
     return render(request, 'Scam_reports/report_scam.html', {'form': form})
 
@@ -88,7 +88,7 @@ def mark_resolved(request, report_id):
         messages.success(request, "Report marked as resolved.")
         return redirect('report_list')
     else:
-        return HttpResponseForbidden("You don’t have permission to do that.")
+        return HttpResponseForbidden("You don't have permission to do that.")
     
 def register(request):
     if request.method == 'POST':

@@ -1,20 +1,20 @@
 from django.db import migrations
 
 def create_default_scam_types(apps, schema_editor):
-    ScamType = apps.get_model('Scam_reports', 'ScamType')
+    Scamtype = apps.get_model('Scam_reports', 'Scamtype')
     default_types = [
         'Phishing',
-        'Investment Scam',
-        'Romance Scam',
-        'Fake Job Offer',
-        'Lottery/Prize Scam',
-        'WhatsApp Scam',
-        'M-Pesa Fraud',
         'Impersonation',
-        'Loan Scam',
+        'Investment Scam',
+        'Fake Job',
+        'Romance Scam',
+        'Giveaway Scam',
+        'Crypto Scam',
+        'Tech Support Scam',
+        'Charity Scam',
     ]
     for name in default_types:
-        ScamType.objects.get_or_create(name=name)
+        Scamtype.objects.get_or_create(name=name)
 
 class Migration(migrations.Migration):
 

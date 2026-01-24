@@ -22,15 +22,3 @@ class Scamreports(models.Model):
         return f"{self.scam_type} - {self.name_or_number} - {self.social_media}"
     
 
-
-class Feedback(models.Model):
-    name = models.CharField(max_length=100, blank=True)
-    email = models.EmailField(blank=True)
-    message = models.TextField()
-    submitted_at = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return self.name or "Anonymous"
-
-    
-

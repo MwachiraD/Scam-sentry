@@ -45,7 +45,7 @@
           </p>
         {% endif %}
 
-        {% if report.is_whistleblower %}
+        {% if not report.user %}
           <p><span class="badge bg-dark text-light">🕵️ Anonymous Whistleblower</span></p>
         {% endif %}
 

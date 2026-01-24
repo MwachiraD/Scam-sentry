@@ -1,6 +1,6 @@
 
 from django import forms
-from .models import Scamreports, Scamtype, Feedback
+from .models import Scamreports, Scamtype
 
 class Scamreportform(forms.ModelForm):
     scam_type = forms.ModelMultipleChoiceField(
