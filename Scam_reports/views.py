@@ -12,8 +12,24 @@ from django.utils import timezone
 from allauth.socialaccount.models import SocialApp
 from django.contrib.sites.models import Site
 from decouple import config
-from .forms import Scamreportform, ReportAbuseForm, ReportFollowForm, ReportCommentForm
-from .models import Scamreports, Scamtype, ReportAbuse, ReportFollow, ReportComment
+from .forms import (
+    Scamreportform,
+    ReportAbuseForm,
+    ReportFollowForm,
+    ReportCommentForm,
+    WatchlistForm,
+    DigestSubscriptionForm,
+)
+from .models import (
+    Scamreports,
+    Scamtype,
+    ReportAbuse,
+    ReportFollow,
+    ReportComment,
+    ReportEditLog,
+    WatchlistItem,
+    DigestSubscription,
+)
 from .utils import ensure_google_social_app
 
 
@@ -83,6 +99,7 @@ def report_scam(request):
             scamreport = form.save(commit=False)
             if request.user.is_authenticated:
                 scamreport.user = request.user
+            scamreport.is_hidden = True
 
             scamreport.save()
             form.save_m2m()
@@ -99,7 +116,20 @@ def report_scam(request):
         form = Scamreportform()
         form.fields['scam_type'].queryset = scam_type_queryset
 
-    return render(request, 'Scam_reports/report_scam.html', {'form': form})
+    summary = cache.get('report_summary')
+    if summary is None:
+        visible_reports = Scamreports.objects.filter(is_hidden=False)
+        total_reports = visible_reports.count()
+        trending_count = visible_reports.filter(date_reported__gte=timezone.now() - timedelta(days=7)).count()
+        last_report = visible_reports.order_by('-date_reported').first()
+        summary = {
+            'total_reports': total_reports,
+            'trending_count': trending_count,
+            'last_reported': last_report.date_reported if last_report else None,
+        }
+        cache.set('report_summary', summary, 300)
+
+    return render(request, 'Scam_reports/report_scam.html', {'form': form, 'summary': summary})
 
 
 def report_list(request):
@@ -114,6 +144,12 @@ def report_list(request):
             Q(name_or_number__icontains=query) |
             Q(social_media__icontains=query)
         )
+    if query and not reports.exists():
+        reports = Scamreports.objects.filter(is_hidden=False).filter(
+            Q(name_or_number__icontains=query) |
+            Q(social_media__icontains=query) |
+            Q(scam_type__name__icontains=query)
+        ).distinct()
 
     filter_option = request.GET.get('filter', 'all')
 
@@ -140,7 +176,7 @@ def report_list(request):
 
     suggestion = None
     if query and not reports.exists():
-        candidates = list(scam_types.values_list('name', flat=True))
+        candidates = [t.name for t in scam_types]
         matches = get_close_matches(query, candidates, n=1, cutoff=0.6)
         suggestion = matches[0] if matches else None
 
@@ -162,6 +198,7 @@ def report_list(request):
         'query': query,
         'suggestion': suggestion,
         'trending_reports': trending_reports,
+        'digest_form': DigestSubscriptionForm(),
     }
     return render(request, 'Scam_reports/report_list.html', context)
 
@@ -206,11 +243,18 @@ def report_detail(request, report_id):
         return HttpResponseForbidden("This report is not available.")
     follow_form = ReportFollowForm()
     comment_form = ReportCommentForm()
+    watchlist_form = WatchlistForm()
     comments = report.comments.filter(is_approved=True).order_by('-created_at')
     return render(
         request,
         'Scam_reports/report_detail.html',
-        {'report': report, 'follow_form': follow_form, 'comment_form': comment_form, 'comments': comments},
+        {
+            'report': report,
+            'follow_form': follow_form,
+            'comment_form': comment_form,
+            'watchlist_form': watchlist_form,
+            'comments': comments,
+        },
     )
 
 
@@ -225,11 +269,18 @@ def follow_report(request, report_id):
         ReportFollow.objects.get_or_create(report=report, email=form.cleaned_data['email'])
         return render(request, 'Scam_reports/report_follow_thanks.html', {'report': report})
     comment_form = ReportCommentForm()
+    watchlist_form = WatchlistForm()
     comments = report.comments.filter(is_approved=True).order_by('-created_at')
     return render(
         request,
         'Scam_reports/report_detail.html',
-        {'report': report, 'follow_form': form, 'comment_form': comment_form, 'comments': comments},
+        {
+            'report': report,
+            'follow_form': form,
+            'comment_form': comment_form,
+            'watchlist_form': watchlist_form,
+            'comments': comments,
+        },
     )
 
 
@@ -246,21 +297,90 @@ def add_comment(request, report_id):
         comment.save()
         return render(request, 'Scam_reports/report_comment_thanks.html', {'report': report})
     follow_form = ReportFollowForm()
+    watchlist_form = WatchlistForm()
     comments = report.comments.filter(is_approved=True).order_by('-created_at')
     return render(
         request,
         'Scam_reports/report_detail.html',
-        {'report': report, 'follow_form': follow_form, 'comment_form': form, 'comments': comments},
+        {
+            'report': report,
+            'follow_form': follow_form,
+            'comment_form': form,
+            'watchlist_form': watchlist_form,
+            'comments': comments,
+        },
     )
+
+
+@login_required
+def add_watchlist(request, report_id):
+    if request.method != 'POST':
+        return HttpResponseNotAllowed(['POST'])
+    report = get_object_or_404(Scamreports, id=report_id)
+    WatchlistItem.objects.get_or_create(
+        user=request.user,
+        name_or_number=report.name_or_number,
+        social_media=report.social_media or "",
+    )
+    return render(request, 'Scam_reports/watchlist_thanks.html', {'report': report})
+
+
+@login_required
+def watchlist(request):
+    items = WatchlistItem.objects.filter(user=request.user).order_by('-created_at')
+    return render(request, 'Scam_reports/watchlist.html', {'items': items})
+
+
+def digest_subscribe(request):
+    if request.method != 'POST':
+        return HttpResponseNotAllowed(['POST'])
+    form = DigestSubscriptionForm(request.POST)
+    if form.is_valid():
+        subscription, _ = DigestSubscription.objects.get_or_create(email=form.cleaned_data['email'])
+        if request.user.is_authenticated:
+            subscription.user = request.user
+            subscription.save(update_fields=['user'])
+        return render(request, 'Scam_reports/digest_thanks.html', {})
+    return redirect('report_list')
 
 
 @login_required
 def moderation_queue(request):
     if not request.user.is_staff:
         return HttpResponseForbidden("You don't have permission to view this page.")
-    pending_reports = Scamreports.objects.filter(is_verified=False, is_hidden=False).order_by('-date_reported')[:50]
+    pending_reports = Scamreports.objects.filter(is_hidden=True).order_by('-date_reported')[:50]
     open_abuse = ReportAbuse.objects.filter(status='open').order_by('-created_at')[:50]
     return render(request, 'Scam_reports/moderation_queue.html', {'pending_reports': pending_reports, 'open_abuse': open_abuse})
+
+
+def policy(request):
+    return render(request, 'Scam_reports/policy.html')
+
+
+@login_required
+def approve_report(request, report_id):
+    if request.method != 'POST':
+        return HttpResponseNotAllowed(['POST'])
+    if not request.user.is_staff:
+        return HttpResponseForbidden("You don't have permission to do that.")
+    report = get_object_or_404(Scamreports, id=report_id)
+    report.is_hidden = False
+    report.is_verified = True
+    report.save(update_fields=['is_hidden', 'is_verified'])
+    return redirect('moderation_queue')
+
+
+@login_required
+def reject_report(request, report_id):
+    if request.method != 'POST':
+        return HttpResponseNotAllowed(['POST'])
+    if not request.user.is_staff:
+        return HttpResponseForbidden("You don't have permission to do that.")
+    report = get_object_or_404(Scamreports, id=report_id)
+    report.is_hidden = True
+    report.is_verified = False
+    report.save(update_fields=['is_hidden', 'is_verified'])
+    return redirect('moderation_queue')
 
 def thank_you(request):
      return render (request , "thank_you.html")
@@ -269,6 +389,8 @@ def mark_resolved(request, report_id):
     report = get_object_or_404(Scamreports, id=report_id)
     if request.user == report.user or request.user.is_staff:
         report.is_resolved = True
+        report.resolution_reason = request.POST.get('resolution_reason', '')
+        report.resolved_at = timezone.now()
         report.save()
         messages.success(request, "Report marked as resolved.")
         return redirect('report_list')
@@ -298,6 +420,14 @@ def edit_report(request, pk):
     if request.method == 'POST':
         form = Scamreportform(request.POST, instance=report)
         if form.is_valid():
+            if form.has_changed():
+                changes = {}
+                for field in form.changed_data:
+                    changes[field] = {
+                        'from': getattr(report, field),
+                        'to': form.cleaned_data.get(field),
+                    }
+                ReportEditLog.objects.create(report=report, user=request.user, changes=changes)
             form.save()
             return redirect('user_dashboard')
     else:

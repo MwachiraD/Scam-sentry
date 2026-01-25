@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+
+{% block title %}Added to Watchlist{% endblock %}
+
+{% block content %}
+<div class="text-center py-4">
+  <div class="card p-4 reveal">
+    <h2>Added to your watchlist</h2>
+    <p class="text-muted">You can view it anytime in your dashboard.</p>
+    <a href="{% url 'watchlist' %}" class="btn btn-accent mt-2">Go to Watchlist</a>
+  </div>
+</div>
+{% endblock %}

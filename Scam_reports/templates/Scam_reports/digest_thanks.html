@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+
+{% block title %}Subscribed{% endblock %}
+
+{% block content %}
+<div class="text-center py-4">
+  <div class="card p-4 reveal">
+    <h2>You're subscribed</h2>
+    <p class="text-muted">You will receive the weekly scam digest.</p>
+    <a href="{% url 'report_list' %}" class="btn btn-accent">Back to Reports</a>
+  </div>
+</div>
+{% endblock %}

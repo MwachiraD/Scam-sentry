@@ -11,7 +11,8 @@ class Scamreports(models.Model):
     user=models.ForeignKey(User, on_delete=models.CASCADE , null=True , blank=True)
     is_resolved=models.BooleanField(default=False)
     resolution_reason=models.CharField(max_length=120, blank=True)
-    is_hidden=models.BooleanField(default=False)
+    resolved_at=models.DateTimeField(null=True, blank=True)
+    is_hidden=models.BooleanField(default=True)
     is_verified=models.BooleanField(default=False)
     encounter_count=models.PositiveIntegerField(default=0)
     evidence_text=models.TextField(blank=True, null=True)
@@ -104,6 +105,39 @@ class ReportComment(models.Model):
 
     def __str__(self):
         return f"Comment {self.id} on {self.report_id}"
+
+
+class ReportEditLog(models.Model):
+    report = models.ForeignKey(Scamreports, on_delete=models.CASCADE, related_name="edit_logs")
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    changes = models.JSONField(default=dict)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Edit {self.id} for report {self.report_id}"
+
+
+class WatchlistItem(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="watchlist_items")
+    name_or_number = models.CharField(max_length=100)
+    social_media = models.CharField(max_length=100, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('user', 'name_or_number', 'social_media')
+
+    def __str__(self):
+        return f"{self.user_id} watches {self.name_or_number}"
+
+
+class DigestSubscription(models.Model):
+    email = models.EmailField(unique=True)
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.email
 
 
 class ReportAbuse(models.Model):

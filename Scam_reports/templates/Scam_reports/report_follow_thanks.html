@@ -4,8 +4,10 @@
 
 {% block content %}
 <div class="text-center py-4">
-  <h2>Thanks for subscribing</h2>
-  <p class="text-muted">We will notify you if this report changes.</p>
-  <a href="{% url 'report_detail' report.id %}" class="btn btn-accent">Back to Report</a>
+  <div class="card p-4 reveal">
+    <h2>Thanks for subscribing</h2>
+    <p class="text-muted">We will notify you if this report changes.</p>
+    <a href="{% url 'report_detail' report.id %}" class="btn btn-accent">Back to Report</a>
+  </div>
 </div>
 {% endblock %}

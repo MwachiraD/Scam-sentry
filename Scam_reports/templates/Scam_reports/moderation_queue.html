@@ -18,7 +18,16 @@
                 <a href="{% url 'report_detail' report.id %}"><strong>{{ report.name_or_number }}</strong></a>
                 <div class="text-muted small">{{ report.social_media }}</div>
               </div>
-              <span class="badge bg-secondary">Pending</span>
+              <div class="d-flex gap-2">
+                <form method="post" action="{% url 'approve_report' report.id %}">
+                  {% csrf_token %}
+                  <button class="btn btn-sm btn-success">Approve</button>
+                </form>
+                <form method="post" action="{% url 'reject_report' report.id %}">
+                  {% csrf_token %}
+                  <button class="btn btn-sm btn-outline-danger">Reject</button>
+                </form>
+              </div>
             </li>
           {% endfor %}
         </ul>
@@ -35,7 +44,7 @@
           {% for abuse in open_abuse %}
             <li class="list-group-item">
               <div class="fw-bold">{{ abuse.get_reason_display }}</div>
-              <div class="text-muted small">{{ abuse.report.name_or_number }} · {{ abuse.created_at|date:"M d, Y" }}</div>
+              <div class="text-muted small">{{ abuse.report.name_or_number }} - {{ abuse.created_at|date:"M d, Y" }}</div>
             </li>
           {% endfor %}
         </ul>
@@ -46,3 +55,4 @@
   </div>
 </div>
 {% endblock %}
+

@@ -37,26 +37,31 @@
 <form method="GET" class="card p-3 mb-4 reveal">
   <div class="row g-3 align-items-center">
     <div class="col-md-6">
-      <input type="text" name="q" value="{{ query }}" class="form-control" placeholder="Search by name, number, or social handle">
+      <input type="text" name="q" value="{{ query }}" class="form-control" placeholder="Search by name, number, or social handle" list="scamTypeSuggestions" aria-label="Search reports">
+      <datalist id="scamTypeSuggestions">
+        {% for t in scam_types %}
+          <option value="{{ t.name }}"></option>
+        {% endfor %}
+      </datalist>
     </div>
     <div class="col-md-3">
-      <select name="filter" class="form-select">
+      <select name="filter" class="form-select" aria-label="Filter by status">
         <option value="all" {% if filter_option == 'all' %}selected{% endif %}>All Statuses</option>
         <option value="resolved" {% if filter_option == 'resolved' %}selected{% endif %}>Resolved</option>
         <option value="unresolved" {% if filter_option == 'unresolved' %}selected{% endif %}>Unresolved</option>
       </select>
     </div>
     <div class="col-md-3">
-      <select name="date" class="form-select">
+      <select name="date" class="form-select" aria-label="Filter by date range">
         <option value="all" {% if date_filter == 'all' %}selected{% endif %}>Any time</option>
         <option value="7d" {% if date_filter == '7d' %}selected{% endif %}>Last 7 days</option>
         <option value="30d" {% if date_filter == '30d' %}selected{% endif %}>Last 30 days</option>
       </select>
     </div>
   </div>
-  <div class="mt-3 d-flex flex-wrap gap-2">
+  <div class="mt-3 d-flex flex-wrap gap-2" id="typeChips">
     {% for t in scam_types %}
-      <label class="pill">
+      <label class="pill" data-name="{{ t.name|lower }}">
         <input type="checkbox" name="type" value="{{ t.id }}" {% if t.id|stringformat:"s" in selected_types %}checked{% endif %}>
         {{ t.name }}
       </label>
@@ -136,6 +141,9 @@
             {% if report.resolution_reason %}
               <span class="text-muted small">({{ report.resolution_reason }})</span>
             {% endif %}
+            {% if report.resolved_at %}
+              <span class="text-muted small">on {{ report.resolved_at|date:"M d, Y" }}</span>
+            {% endif %}
           {% else %}
             <span class="badge bg-danger">Not Resolved</span>
           {% endif %}
@@ -146,6 +154,16 @@
   {% empty %}
     <p>No reports submitted.</p>
   {% endfor %}
+</div>
+
+<div class="card p-4 mt-4 reveal">
+  <h4>Weekly scam digest</h4>
+  <p class="text-muted">Get a weekly email with the latest trends.</p>
+  <form method="post" action="{% url 'digest_subscribe' %}" class="d-flex flex-wrap gap-2">
+    {% csrf_token %}
+    {{ digest_form.email }}
+    <button type="submit" class="btn btn-accent">Subscribe</button>
+  </form>
 </div>
 {% endblock %}
 
@@ -171,5 +189,17 @@
       }
     });
   });
+
+  const searchInput = document.querySelector('input[name="q"]');
+  const chips = document.querySelectorAll('#typeChips label');
+  if (searchInput) {
+    searchInput.addEventListener('input', () => {
+      const value = searchInput.value.toLowerCase();
+      chips.forEach((chip) => {
+        const name = chip.dataset.name || '';
+        chip.style.opacity = value && !name.includes(value) ? '0.4' : '1';
+      });
+    });
+  }
 </script>
 {% endblock %}

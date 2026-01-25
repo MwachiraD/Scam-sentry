@@ -1,0 +1,27 @@
+﻿{% extends 'base.html' %}
+
+{% block title %}Watchlist{% endblock %}
+
+{% block content %}
+<div class="card p-4 reveal">
+  <h2>Your Watchlist</h2>
+  <p class="text-muted">Track phone numbers or handles you care about.</p>
+
+  {% if items %}
+    <ul class="list-group list-group-flush">
+      {% for item in items %}
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+          <div>
+            <strong>{{ item.name_or_number }}</strong>
+            {% if item.social_media %}<span class="text-muted small"> - {{ item.social_media }}</span>{% endif %}
+          </div>
+          <span class="text-muted small">{{ item.created_at|date:"M d, Y" }}</span>
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p class="text-muted">No watchlist items yet.</p>
+  {% endif %}
+</div>
+{% endblock %}
+

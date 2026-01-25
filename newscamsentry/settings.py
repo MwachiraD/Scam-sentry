@@ -46,6 +46,8 @@ if RENDER_EXTERNAL_HOSTNAME:
 
 GOOGLE_CLIENT_ID = config('GOOGLE_CLIENT_ID')
 GOOGLE_CLIENT_SECRET = config('GOOGLE_CLIENT_SECRET')
+PLAUSIBLE_DOMAIN = config('PLAUSIBLE_DOMAIN', default='')
+PLAUSIBLE_SCRIPT_URL = config('PLAUSIBLE_SCRIPT_URL', default='https://plausible.io/js/script.js')
 
 
 
@@ -92,6 +94,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'newscamsentry.context_processors.analytics_settings',
             ],
         },
     },
@@ -102,11 +105,13 @@ WSGI_APPLICATION = 'newscamsentry.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
+_default_db_url = f"sqlite:///{(BASE_DIR / 'db.sqlite3').as_posix()}"
+_db_url = os.getenv('DATABASE_URL')
 DATABASES = {
-    'default': dj_database_url.config(
-        default=f"sqlite:///{(BASE_DIR / 'db.sqlite3').as_posix()}",
-        conn_max_age=600,
-        ssl_require=not DEBUG,
+    'default': (
+        dj_database_url.parse(_db_url, conn_max_age=600, ssl_require=not DEBUG)
+        if _db_url
+        else dj_database_url.config(default=_default_db_url, conn_max_age=600, ssl_require=not DEBUG)
     )
 }
 

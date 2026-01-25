@@ -20,6 +20,11 @@
             <h4 class="card-title text-danger">{{ report.name_or_number }}</h4>
             <p class="card-subtitle text-muted">{{ report.social_media }}</p>
             <p>{{ report.description }}</p>
+
+            {% if report.is_hidden %}
+              <span class="badge bg-secondary">Pending review</span>
+            {% endif %}
+
             {% if report.evidence_text %}
               <p><strong>Evidence Text:</strong> {{ report.evidence_text }}</p>
             {% endif %}
@@ -42,10 +47,17 @@
             <p><strong>Status:</strong>
               {% if report.is_resolved %}
                 <span class="badge bg-success">Resolved</span>
+                {% if report.resolution_reason %}
+                  <span class="text-muted small">({{ report.resolution_reason }})</span>
+                {% endif %}
+                {% if report.resolved_at %}
+                  <span class="text-muted small">on {{ report.resolved_at|date:"M d, Y" }}</span>
+                {% endif %}
               {% else %}
                 <span class="badge bg-danger">Not Resolved</span>
-                <form method="post" action="{% url 'mark_resolved' report.id %}" class="d-inline">
+                <form method="post" action="{% url 'mark_resolved' report.id %}" class="d-inline mt-2">
                   {% csrf_token %}
+                  <input type="text" name="resolution_reason" class="form-control form-control-sm mt-2" placeholder="Resolution note (optional)">
                   <button class="btn btn-sm btn-outline-success mt-2">Mark as Resolved</button>
                 </form>
               {% endif %}

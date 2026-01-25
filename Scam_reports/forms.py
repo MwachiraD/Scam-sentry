@@ -1,7 +1,15 @@
 
 from django import forms
 import os
-from .models import Scamreports, Scamtype, ReportAbuse, ReportFollow, ReportComment
+from .models import (
+    Scamreports,
+    Scamtype,
+    ReportAbuse,
+    ReportFollow,
+    ReportComment,
+    WatchlistItem,
+    DigestSubscription,
+)
 
 class Scamreportform(forms.ModelForm):
     scam_type = forms.ModelMultipleChoiceField(
@@ -73,6 +81,21 @@ class ReportCommentForm(forms.ModelForm):
         widgets = {
             'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Your name (optional)'}),
             'message': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Add a public comment...'}),
+        }
+
+
+class WatchlistForm(forms.ModelForm):
+    class Meta:
+        model = WatchlistItem
+        fields = []
+
+
+class DigestSubscriptionForm(forms.ModelForm):
+    class Meta:
+        model = DigestSubscription
+        fields = ['email']
+        widgets = {
+            'email': forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'you@example.com'})
         }
 
 

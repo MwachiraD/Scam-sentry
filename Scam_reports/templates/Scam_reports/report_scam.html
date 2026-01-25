@@ -9,6 +9,13 @@
     <p class="text-uppercase fw-bold text-muted mb-2">Community Alert Hub</p>
     <h1 class="display-5">Report a scam. Protect the next person.</h1>
     <p class="lead text-muted">Share details, evidence, and scam type. Every report strengthens collective defense.</p>
+    {% if summary %}
+      <div class="d-flex flex-wrap gap-3 mt-3">
+        <div class="pill">Total reports: <strong>{{ summary.total_reports }}</strong></div>
+        <div class="pill">Last 7 days: <strong>{{ summary.trending_count }}</strong></div>
+        <div class="pill">Last reported: <strong>{% if summary.last_reported %}{{ summary.last_reported|date:"M d, Y" }}{% else %}N/A{% endif %}</strong></div>
+      </div>
+    {% endif %}
   </div>
   <div class="hero-card card p-3">
     <div class="d-flex align-items-center gap-3">
@@ -23,14 +30,16 @@
 </div>
 
 {% if error_message %}
-  <div class="alert alert-danger">{{ error_message }}</div>
+  <div id="formAlert" class="alert alert-danger" role="alert">{{ error_message }}</div>
+{% else %}
+  <div id="formAlert" class="alert d-none" role="alert"></div>
 {% endif %}
 
 <form method="POST" id="scamReportForm" enctype="multipart/form-data" class="p-4 card reveal">
   {% csrf_token %}
 
-  <div class="stepper mb-4">
-    <button type="button" class="step active" data-step="1">1. Details</button>
+  <div class="stepper mb-4" role="tablist">
+    <button type="button" class="step active" data-step="1" aria-current="step">1. Details</button>
     <button type="button" class="step" data-step="2">2. Evidence</button>
   </div>
 
@@ -59,20 +68,7 @@
             <div class="form-check">
               {{ checkbox.tag }}
               <label class="form-check-label fw-semibold" for="{{ checkbox.id_for_label }}">
-                <span class="scam-label-text">
-                  {% if "phishing" in checkbox.choice_label|lower %} 🐟
-                  {% elif "investment" in checkbox.choice_label|lower %} 💰
-                  {% elif "romance" in checkbox.choice_label|lower %} ❤️
-                  {% elif "impersonation" in checkbox.choice_label|lower %} 🕵️
-                  {% elif "job" in checkbox.choice_label|lower %} 🧑‍💼
-                  {% elif "crypto" in checkbox.choice_label|lower %} ₿
-                  {% elif "giveaway" in checkbox.choice_label|lower %} 🎁
-                  {% elif "charity" in checkbox.choice_label|lower %} 🤝
-                  {% elif "tech" in checkbox.choice_label|lower %} 💻
-                  {% else %} ✅
-                  {% endif %}
-                  {{ checkbox.choice_label }}
-                </span>
+                <span class="scam-label-text">{{ checkbox.choice_label }}</span>
               </label>
             </div>
           </div>
@@ -128,6 +124,7 @@
   document.addEventListener("DOMContentLoaded", () => {
     const form = document.getElementById("scamReportForm");
     const spinner = document.getElementById("spinner");
+    const formAlert = document.getElementById("formAlert");
     const csrfToken = form.querySelector('input[name="csrfmiddlewaretoken"]').value;
     const steps = document.querySelectorAll(".step");
     const panels = document.querySelectorAll(".step-panel");
@@ -136,9 +133,20 @@
     const submitBtn = document.getElementById("submitBtn");
     let currentStep = 1;
 
+    const showAlert = (message, type) => {
+      formAlert.textContent = message;
+      formAlert.className = `alert alert-${type}`;
+      formAlert.classList.remove("d-none");
+    };
+
     const updateSteps = () => {
       steps.forEach((step) => {
         step.classList.toggle("active", step.dataset.step == currentStep);
+        if (step.dataset.step == currentStep) {
+          step.setAttribute("aria-current", "step");
+        } else {
+          step.removeAttribute("aria-current");
+        }
       });
       panels.forEach((panel) => {
         panel.classList.toggle("d-none", panel.dataset.step != currentStep);
@@ -168,6 +176,7 @@
     form.addEventListener("submit", async (event) => {
       event.preventDefault();
       spinner.style.display = "inline-block";
+      formAlert.classList.add("d-none");
 
       const formData = new FormData(form);
 
@@ -182,12 +191,12 @@
         });
 
         if (response.ok) {
-          alert("✅ Report submitted successfully!");
+          showAlert("Report submitted successfully. It will be reviewed soon.", "success");
           form.reset();
           currentStep = 1;
           updateSteps();
         } else {
-          let message = "❌ Submission failed. Please try again.";
+          let message = "Submission failed. Please try again.";
           try {
             const data = await response.json();
             if (data && data.message) {
@@ -196,11 +205,11 @@
           } catch (err) {
             // ignore JSON parse errors
           }
-          alert(message);
+          showAlert(message, "danger");
         }
       } catch (error) {
         console.error("Error:", error);
-        alert("⚠️ Something went wrong.");
+        showAlert("Something went wrong. Please try again.", "danger");
       } finally {
         spinner.style.display = "none";
       }
@@ -249,3 +258,4 @@
   }
 </style>
 {% endblock %}
+

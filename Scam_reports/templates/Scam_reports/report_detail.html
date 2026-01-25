@@ -49,9 +49,14 @@
       {% endif %}
 
       <p class="text-muted">Reported on {{ report.date_reported|date:"M d, Y H:i" }}</p>
+      {% if report.is_resolved %}
+        <p class="text-muted">Resolved{% if report.resolution_reason %}: {{ report.resolution_reason }}{% endif %}{% if report.resolved_at %} on {{ report.resolved_at|date:"M d, Y" }}{% endif %}</p>
+      {% endif %}
 
       <div class="d-flex flex-wrap gap-2">
         <button type="button" class="btn btn-accent" id="copyLinkBtn">Copy link</button>
+        <a href="#" class="btn btn-outline-dark" id="shareTwitter"><i class="fa-brands fa-x-twitter"></i> Share</a>
+        <a href="#" class="btn btn-outline-success" id="shareWhatsApp"><i class="fab fa-whatsapp"></i> WhatsApp</a>
         <a href="{% url 'report_abuse' report.id %}" class="btn btn-outline-danger">Report issue</a>
       </div>
     </div>
@@ -101,6 +106,17 @@
         <button type="submit" class="btn btn-accent mt-2">Notify me</button>
       </form>
     </div>
+
+    {% if user.is_authenticated %}
+    <div class="card p-3 mt-3 reveal">
+      <h5>Watchlist</h5>
+      <p class="text-muted small">Track this handle for updates.</p>
+      <form method="post" action="{% url 'add_watchlist' report.id %}">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-outline-dark">Add to watchlist</button>
+      </form>
+    </div>
+    {% endif %}
   </div>
 </div>
 
@@ -129,5 +145,10 @@
       alert("Copy failed. You can manually copy the URL.");
     }
   });
+
+  const pageUrl = encodeURIComponent(window.location.href);
+  const shareText = encodeURIComponent("Scam alert from Scam Sentry");
+  document.getElementById("shareTwitter").href = `https://twitter.com/intent/tweet?text=${shareText}&url=${pageUrl}`;
+  document.getElementById("shareWhatsApp").href = `https://wa.me/?text=${shareText}%20${pageUrl}`;
 </script>
 {% endblock %}
