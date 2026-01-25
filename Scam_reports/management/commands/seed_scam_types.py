@@ -13,6 +13,15 @@ DEFAULT_TYPES = [
     'Crypto Scam',
     'Tech Support Scam',
     'Charity Scam',
+    'Purchase Scam',
+    'Marketplace Scam',
+    'Lottery Scam',
+    'Loan Scam',
+    'Account Takeover',
+    'Delivery Scam',
+    'Rental Scam',
+    'WhatsApp Scam',
+    'M-Pesa Fraud',
 ]
 
 

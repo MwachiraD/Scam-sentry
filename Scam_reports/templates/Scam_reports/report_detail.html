@@ -1,0 +1,133 @@
+﻿{% extends 'base.html' %}
+
+{% block title %}Scam Report: {{ report.name_or_number }}{% endblock %}
+{% block meta_description %}Scam report for {{ report.name_or_number }} on {{ report.social_media }}. Stay alert with community-verified info.{% endblock %}
+
+{% block content %}
+<div class="row">
+  <div class="col-lg-8">
+    <div class="card p-4 reveal">
+      <div class="d-flex justify-content-between align-items-start">
+        <div>
+          <h1 class="text-danger mb-1">{{ report.name_or_number }}</h1>
+          <p class="text-muted">{{ report.social_media }}</p>
+        </div>
+        <div class="text-end">
+          <span class="badge {{ report.confidence_class }}">{{ report.confidence_label }}</span>
+          {% if report.is_verified %}
+            <span class="badge bg-success mt-2 d-block">Reviewed</span>
+          {% endif %}
+        </div>
+      </div>
+
+      <p class="lead">{{ report.description }}</p>
+
+      <p><strong>Scam Types:</strong>
+      {% for scam in report.scam_type.all %}
+        <span class="badge bg-warning text-dark">{{ scam.name }}</span>
+      {% endfor %}</p>
+
+      <div class="alert alert-warning">
+        <strong>Pattern:</strong> {{ report.pattern_summary }}
+      </div>
+
+      <div class="small text-muted mb-3">
+        <strong>Safety tips:</strong>
+        <ul class="mb-0">
+          {% for tip in report.safety_tips %}
+            <li>{{ tip }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+
+      {% if report.evidence_text %}
+        <p><strong>Evidence:</strong> {{ report.evidence_text }}</p>
+      {% endif %}
+
+      {% if report.evidence_file %}
+        <p><a href="{{ report.evidence_file.url }}" target="_blank" class="btn btn-outline-secondary">View Evidence</a></p>
+      {% endif %}
+
+      <p class="text-muted">Reported on {{ report.date_reported|date:"M d, Y H:i" }}</p>
+
+      <div class="d-flex flex-wrap gap-2">
+        <button type="button" class="btn btn-accent" id="copyLinkBtn">Copy link</button>
+        <a href="{% url 'report_abuse' report.id %}" class="btn btn-outline-danger">Report issue</a>
+      </div>
+    </div>
+
+    <div class="card p-3 mt-4 reveal">
+      <h4>Community comments</h4>
+      <p class="text-muted small">Comments are moderated before appearing.</p>
+
+      {% if comments %}
+        <div class="mb-3">
+          {% for comment in comments %}
+            <div class="border rounded-3 p-2 mb-2">
+              <div class="fw-bold">{{ comment.name|default:"Anonymous" }}</div>
+              <div class="small text-muted">{{ comment.created_at|date:"M d, Y" }}</div>
+              <p class="mb-0">{{ comment.message }}</p>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p class="text-muted">No comments yet.</p>
+      {% endif %}
+
+      <form method="post" action="{% url 'add_comment' report.id %}">
+        {% csrf_token %}
+        <div class="mb-2">
+          {{ comment_form.name }}
+        </div>
+        <div class="mb-2">
+          {{ comment_form.message }}
+        </div>
+        <button type="submit" class="btn btn-accent">Add Comment</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="col-lg-4">
+    <div class="card p-3 reveal">
+      <h5>Follow this report</h5>
+      <p class="text-muted small">Get notified if this report is updated.</p>
+      <form method="post" action="{% url 'follow_report' report.id %}">
+        {% csrf_token %}
+        {{ follow_form.email.label_tag }}
+        {{ follow_form.email }}
+        {% if follow_form.email.errors %}
+          <div class="text-danger small">{{ follow_form.email.errors }}</div>
+        {% endif %}
+        <button type="submit" class="btn btn-accent mt-2">Notify me</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Report",
+  "headline": "Scam report for {{ report.name_or_number }}",
+  "datePublished": "{{ report.date_reported|date:'c' }}",
+  "about": {
+    "@type": "Thing",
+    "name": "{{ report.social_media }}"
+  },
+  "description": "{{ report.description|truncatewords:25 }}"
+}
+</script>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  document.getElementById("copyLinkBtn").addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      alert("Link copied to clipboard");
+    } catch (err) {
+      alert("Copy failed. You can manually copy the URL.");
+    }
+  });
+</script>
+{% endblock %}

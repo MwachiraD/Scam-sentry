@@ -3,32 +3,31 @@
 {% load static %}
 
 {% block title %}Register{% endblock %}
+{% block meta_description %}Create your Scam Sentry account to track reports and help the community.{% endblock %}
 
 {% block content %}
-<div class="text-center my-3">
-  <img src="{% static 'Scam_reports/images/logo.png' %}" alt="Scam Sentry Logo" class="logo">
-</div>
+<div class="row justify-content-center">
+  <div class="col-lg-6">
+    <div class="text-center mb-3">
+      <img src="{% static 'Scam_reports/images/logo.png' %}" alt="Scam Sentry Logo" class="logo">
+    </div>
 
-<div class="container signup-card">
-  <div class="card shadow">
-    <div class="card-body">
-      <h3 class="card-title text-center mb-4">Register</h3>
+    <div class="card p-4 reveal">
+      <h2 class="mb-2">Create your account</h2>
+      <p class="text-muted">Join Scam Sentry and contribute safer alerts.</p>
 
-      <form method="POST" action="{% url 'account_signup' %}">
+      <form method="POST" action="{% url 'account_signup' %}" class="styled-form">
         {% csrf_token %}
         {{ form.as_p }}
-        <button type="submit" class="btn btn-success w-100">Register</button>
+        <button type="submit" class="btn btn-accent w-100">Register</button>
       </form>
 
-      <hr>
-      <p class="text-center">or</p>
-{% provider_login_url 'google' process='signup' as google_signup_url %}
+      <div class="text-center my-3 text-muted">or</div>
 
-<a href="{{ google_signup_url }}?next=/" class="btn btn-success w-100 mb-2">
-  <i class="fab fa-google"></i> Register with Google
-</a>
-
-
+      {% provider_login_url 'google' process='signup' as google_signup_url %}
+      <a href="{{ google_signup_url }}?next=/" class="btn btn-outline-dark w-100 mb-2">
+        <i class="fab fa-google"></i> Register with Google
+      </a>
 
       <div class="text-center">
         <p>Already have an account? <a href="{% url 'account_login' %}">Login</a></p>
@@ -38,9 +37,8 @@
 </div>
 
 <script>
-function openGooglePopup(url) {
-  
-}
+  document.querySelectorAll(".styled-form input, .styled-form textarea, .styled-form select").forEach((el) => {
+    el.classList.add("form-control");
+  });
 </script>
-
 {% endblock %}

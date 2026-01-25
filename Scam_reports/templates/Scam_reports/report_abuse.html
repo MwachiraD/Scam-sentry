@@ -1,0 +1,27 @@
+﻿{% extends 'base.html' %}
+
+{% block title %}Report an Issue{% endblock %}
+{% block meta_description %}Report incorrect or sensitive content in a scam report so our team can review it quickly.{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-7">
+    <h2 class="mb-3">Report an Issue</h2>
+    <p class="text-muted">If this report includes incorrect information or personal data, let us know.</p>
+
+    <div class="card shadow-sm p-3 reveal">
+      <div class="card-body">
+        <h5 class="card-title">{{ report.name_or_number }}</h5>
+        <p class="text-muted mb-3">{{ report.social_media }}</p>
+
+        <form method="post">
+          {% csrf_token %}
+          {{ form.as_p }}
+          <button type="submit" class="btn btn-accent">Submit Report</button>
+          <a href="{% url 'report_list' %}" class="btn btn-outline-dark ms-2">Back</a>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

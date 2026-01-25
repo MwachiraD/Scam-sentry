@@ -1,64 +1,145 @@
-{% extends 'base.html' %}
+﻿{% extends 'base.html' %}
 
 {% block title %}Scam Reports{% endblock %}
+{% block meta_description %}Browse scam reports, spot patterns, and protect yourself with real community alerts.{% endblock %}
 
 {% block content %}
-<h1 class="mb-4 text-center text-primary">All Scam Reports</h1>
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
+  <div>
+    <h1 class="mb-1">All Scam Reports</h1>
+    <p class="text-muted">Search patterns, share warnings, and stay safer.</p>
+  </div>
+  <a href="{% url 'report_scam' %}" class="btn btn-accent">Report a Scam</a>
+</div>
 
-<form method="GET" class="mb-4 d-flex justify-content-center">
-  <input type="text" name="q" class="form-control me-2 w-50" placeholder="Search by name, number, or social media">
-  <button type="submit" class="btn btn-primary">Search</button>
+{% if trending_reports %}
+<div class="card p-3 mb-4 reveal">
+  <div class="d-flex justify-content-between align-items-center mb-2">
+    <h4 class="mb-0">Trending this week</h4>
+    <span class="badge bg-dark text-light">Last 7 days</span>
+  </div>
+  <div class="row g-3">
+    {% for report in trending_reports %}
+      <div class="col-md-4">
+        <a class="text-decoration-none" href="{% url 'report_detail' report.id %}">
+          <div class="p-3 border rounded-4 h-100">
+            <div class="fw-bold text-danger">{{ report.name_or_number }}</div>
+            <div class="text-muted small">{{ report.social_media }}</div>
+            <div class="small mt-2">Encounters: {{ report.encounter_count }}</div>
+          </div>
+        </a>
+      </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+<form method="GET" class="card p-3 mb-4 reveal">
+  <div class="row g-3 align-items-center">
+    <div class="col-md-6">
+      <input type="text" name="q" value="{{ query }}" class="form-control" placeholder="Search by name, number, or social handle">
+    </div>
+    <div class="col-md-3">
+      <select name="filter" class="form-select">
+        <option value="all" {% if filter_option == 'all' %}selected{% endif %}>All Statuses</option>
+        <option value="resolved" {% if filter_option == 'resolved' %}selected{% endif %}>Resolved</option>
+        <option value="unresolved" {% if filter_option == 'unresolved' %}selected{% endif %}>Unresolved</option>
+      </select>
+    </div>
+    <div class="col-md-3">
+      <select name="date" class="form-select">
+        <option value="all" {% if date_filter == 'all' %}selected{% endif %}>Any time</option>
+        <option value="7d" {% if date_filter == '7d' %}selected{% endif %}>Last 7 days</option>
+        <option value="30d" {% if date_filter == '30d' %}selected{% endif %}>Last 30 days</option>
+      </select>
+    </div>
+  </div>
+  <div class="mt-3 d-flex flex-wrap gap-2">
+    {% for t in scam_types %}
+      <label class="pill">
+        <input type="checkbox" name="type" value="{{ t.id }}" {% if t.id|stringformat:"s" in selected_types %}checked{% endif %}>
+        {{ t.name }}
+      </label>
+    {% endfor %}
+  </div>
+  <div class="mt-3">
+    <button type="submit" class="btn btn-accent">Search</button>
+    <a href="{% url 'report_list' %}" class="btn btn-outline-dark ms-2">Reset</a>
+  </div>
 </form>
 
-<form method="get" class="mb-4">
-  <label class="me-2 fw-bold">Filter by Status:</label>
-  <select name="filter" onchange="this.form.submit()" class="form-select w-auto d-inline-block">
-    <option value="all" {% if filter_option == 'all' %}selected{% endif %}>All</option>
-    <option value="resolved" {% if filter_option == 'resolved' %}selected{% endif %}>Resolved</option>
-    <option value="unresolved" {% if filter_option == 'unresolved' %}selected{% endif %}>Unresolved</option>
-  </select>
-</form>
+{% if suggestion %}
+<div class="alert alert-info">No matches found. Did you mean <strong>{{ suggestion }}</strong>?</div>
+{% endif %}
 
 <div class="row">
   {% for report in reports %}
-  <div class="col-md-6 mb-4">
-    <div class="card shadow-sm">
+  <div class="col-lg-6 mb-4">
+    <div class="card shadow-sm reveal">
       <div class="card-body">
-        <h2 class="card-title text-danger">{{ report.name_or_number }}</h2>
-        <h5 class="card-subtitle mb-2 text-muted">{{ report.social_media }}</h5>
-        <p class="card-text">{{ report.description }}</p>
+        <div class="d-flex justify-content-between align-items-start">
+          <div>
+            <a class="text-decoration-none" href="{% url 'report_detail' report.id %}">
+              <h2 class="card-title text-danger mb-0">{{ report.name_or_number }}</h2>
+            </a>
+            <h6 class="card-subtitle mb-2 text-muted">{{ report.social_media }}</h6>
+          </div>
+          <span class="badge {{ report.confidence_class }}">{{ report.confidence_label }}</span>
+        </div>
+        <p class="card-text mt-2">{{ report.description }}</p>
 
         <p><strong>Scam Types:</strong>
         {% for scam in report.scam_type.all %}
           <span class="badge bg-warning text-dark">{{ scam.name }}</span>
         {% endfor %}</p>
 
-        {% if report.evidence_text %}
-          <p><strong>Evidence Text:</strong> {{ report.evidence_text }}</p>
+        {% if report.is_verified %}
+          <span class="badge bg-success">Reviewed</span>
         {% endif %}
 
         {% if report.evidence_file %}
-          <p><strong>Evidence File:</strong> 
-            <a href="{{ report.evidence_file.url }}" target="_blank" class="btn btn-sm btn-outline-secondary">
-              📄 View Evidence
-            </a>
-          </p>
+          <p class="mt-2"><a href="{{ report.evidence_file.url }}" target="_blank" class="btn btn-sm btn-outline-secondary">View Evidence</a></p>
         {% endif %}
 
         {% if not report.user %}
-          <p><span class="badge bg-dark text-light">🕵️ Anonymous Whistleblower</span></p>
+          <p><span class="badge bg-dark text-light">Anonymous Whistleblower</span></p>
         {% endif %}
+
+        <div class="d-flex align-items-center gap-2 my-2">
+          <form method="post" action="{% url 'report_encounter' report.id %}" class="encounter-form d-inline">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-outline-primary btn-sm">
+              I encountered this too (<span class="encounter-count">{{ report.encounter_count }}</span>)
+            </button>
+          </form>
+          <a href="{% url 'report_abuse' report.id %}" class="btn btn-link btn-sm text-decoration-none">Report issue</a>
+        </div>
+
+        <div class="alert alert-warning py-2 px-3 mb-2">
+          <strong>Pattern:</strong> {{ report.pattern_summary }}
+        </div>
+
+        <div class="small text-muted mb-2">
+          <strong>Safety tips:</strong>
+          <ul class="mb-0">
+            {% for tip in report.safety_tips %}
+              <li>{{ tip }}</li>
+            {% endfor %}
+          </ul>
+        </div>
 
         <p><strong>Reported:</strong> {{ report.date_reported|date:"M d, Y H:i" }}</p>
 
         <p><strong>Status:</strong>
           {% if report.is_resolved %}
-            <span class="badge bg-success">✅ Resolved</span>
+            <span class="badge bg-success">Resolved</span>
+            {% if report.resolution_reason %}
+              <span class="text-muted small">({{ report.resolution_reason }})</span>
+            {% endif %}
           {% else %}
-            <span class="badge bg-danger">❌ Not Resolved</span>
+            <span class="badge bg-danger">Not Resolved</span>
           {% endif %}
         </p>
-
       </div>
     </div>
   </div>
@@ -66,4 +147,29 @@
     <p>No reports submitted.</p>
   {% endfor %}
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  document.querySelectorAll(".encounter-form").forEach((form) => {
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const csrfToken = form.querySelector('input[name="csrfmiddlewaretoken"]').value;
+      const response = await fetch(form.action, {
+        method: "POST",
+        headers: {
+          "X-Requested-With": "XMLHttpRequest",
+          "X-CSRFToken": csrfToken
+        }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        const countSpan = form.querySelector(".encounter-count");
+        if (countSpan && data.encounter_count !== undefined) {
+          countSpan.textContent = data.encounter_count;
+        }
+      }
+    });
+  });
+</script>
 {% endblock %}

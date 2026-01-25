@@ -1,33 +1,35 @@
-{% extends 'base.html' %}
+﻿{% extends 'base.html' %}
 {% block title %}Your Scam Reports{% endblock %}
 {% load static %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-  <h1 class="text-success">Your Submitted Scam Reports</h1>
-  <a href="{% url 'report_scam' %}" class="btn btn-primary">➕ Submit New Report</a>
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
+  <div>
+    <h1 class="text-success">Your Scam Reports</h1>
+    <p class="text-muted">Track what you have submitted and update status.</p>
+  </div>
+  <a href="{% url 'report_scam' %}" class="btn btn-accent">Submit New Report</a>
 </div>
 
 {% if reports %}
   <div class="row">
     {% for report in reports %}
       <div class="col-md-6 mb-4">
-        <div class="card shadow-sm">
+        <div class="card shadow-sm reveal">
           <div class="card-body">
             <h4 class="card-title text-danger">{{ report.name_or_number }}</h4>
             <p class="card-subtitle text-muted">{{ report.social_media }}</p>
             <p>{{ report.description }}</p>
-{% if report.evidence_text %}
-          <p><strong>Evidence Text:</strong> {{ report.evidence_text }}</p>
-        {% endif %}
+            {% if report.evidence_text %}
+              <p><strong>Evidence Text:</strong> {{ report.evidence_text }}</p>
+            {% endif %}
 
-        {% if report.evidence_file %}
-          <p><strong>Evidence File:</strong> 
-            <a href="{{ report.evidence_file.url }}" target="_blank" class="btn btn-sm btn-outline-secondary">
-              📄 View Evidence
-            </a>
-          </p>
-        {% endif %}
+            {% if report.evidence_file %}
+              <p><strong>Evidence File:</strong>
+                <a href="{{ report.evidence_file.url }}" target="_blank" class="btn btn-sm btn-outline-secondary">View Evidence</a>
+              </p>
+            {% endif %}
+
             <p>
               <strong>Scam Types:</strong>
               {% for scam in report.scam_type.all %}
@@ -39,9 +41,9 @@
 
             <p><strong>Status:</strong>
               {% if report.is_resolved %}
-                ✅ Resolved
+                <span class="badge bg-success">Resolved</span>
               {% else %}
-                ❌ Not Resolved
+                <span class="badge bg-danger">Not Resolved</span>
                 <form method="post" action="{% url 'mark_resolved' report.id %}" class="d-inline">
                   {% csrf_token %}
                   <button class="btn btn-sm btn-outline-success mt-2">Mark as Resolved</button>
@@ -49,8 +51,7 @@
               {% endif %}
             </p>
 
-            <!-- Optional: Edit Report Button -->
-            <a href="{% url 'edit_report' report.id %}" class="btn btn-sm btn-outline-primary mt-2">✏️ Edit Report</a>
+            <a href="{% url 'edit_report' report.id %}" class="btn btn-sm btn-outline-primary mt-2">Edit Report</a>
           </div>
         </div>
       </div>

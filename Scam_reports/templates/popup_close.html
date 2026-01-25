@@ -1,23 +1,25 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <title>Login successful</title>
-</head>
-<body>
-  <p>Login successful. Redirecting...</p>
+{% extends 'base.html' %}
 
-  <script>
-    try {
-      localStorage.setItem("google_login_done", "true");
-    } catch (e) {
-      console.log("localStorage error:", e);
-    }
+{% block title %}Login Successful{% endblock %}
 
-    setTimeout(() => {
-      window.close();
-    }, 500);  
-    localStorage.removeItem("google_login_done");
+{% block content %}
+<div class="text-center py-4">
+  <div class="card p-4 reveal">
+    <h2>Login successful</h2>
+    <p class="text-muted">You can close this window.</p>
+  </div>
+</div>
 
-  </script>
-</body>
-</html>
+<script>
+  try {
+    localStorage.setItem("google_login_done", "true");
+  } catch (e) {
+    console.log("localStorage error:", e);
+  }
+
+  setTimeout(() => {
+    window.close();
+  }, 500);
+  localStorage.removeItem("google_login_done");
+</script>
+{% endblock %}

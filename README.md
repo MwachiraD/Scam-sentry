@@ -40,6 +40,8 @@ EMAIL_HOST_USER=your-email@example.com
 EMAIL_HOST_PASSWORD=your-email-password
 ```
 
+Note: If you see `decouple.UndefinedValueError: SECRET_KEY not found`, it means the `.env` file is missing or the `SECRET_KEY` value is not set.
+
 4) Run migrations and seed default scam types
 
 ```bash

@@ -5,78 +5,150 @@
   <meta charset="UTF-8">
   <title>{% block title %}Scam Sentry{% endblock %}</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="{% block meta_description %}Scam Sentry helps you report and identify online scams fast.{% endblock %}">
+  <meta property="og:title" content="{% block og_title %}Scam Sentry{% endblock %}">
+  <meta property="og:description" content="{% block og_description %}Report scams, search reports, and stay safer online.{% endblock %}">
+  <meta property="og:type" content="website">
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
   <style>
-  body.dark-mode {
-    background-color: #121212;
-    color: #ffffff;
+  :root {
+    --ink: #0b0f19;
+    --paper: #f7f2ea;
+    --paper-2: #fff8f0;
+    --accent: #ff4d2d;
+    --accent-dark: #d63b1f;
+    --gold: #ffd166;
+    --mint: #2ec4b6;
+    --shadow: 0 18px 45px rgba(16, 24, 40, 0.12);
   }
 
-  .dark-mode .form-check-label {
-    color: #ffffff !important;
+  body {
+    font-family: "Space Grotesk", sans-serif;
+    background: radial-gradient(circle at 10% 10%, #fff1e6 0%, transparent 60%),
+                radial-gradient(circle at 90% 15%, #e8f5ff 0%, transparent 55%),
+                linear-gradient(180deg, #fff8f0 0%, #f7f2ea 60%, #f3ede3 100%);
+    color: var(--ink);
+    min-height: 100vh;
   }
 
-  .dark-mode .form-check-label * {
-    color: #ffffff !important;
+  h1, h2, h3, h4, .brand-font {
+    font-family: "Fraunces", serif;
+    letter-spacing: -0.02em;
   }
 
-  .dark-mode .form-check-input {
-    background-color: #444;
-    border: 1px solid #999;
-  }
-.form-check-label .scam-label-text {
-  color: #212529 !important; 
-}
-
-
-.dark-mode .form-check-label .scam-label-text {
-  color: black !important; 
-}
-
-
-
-  .dark-mode .navbar, .dark-mode .nav-link {
-    background-color: #222 !important;
-    color: white !important;
+  .page-shell {
+    position: relative;
+    overflow-x: hidden;
   }
 
-  .dark-mode .form-control,
-  .dark-mode input,
-  .dark-mode textarea,
-  .dark-mode select {
-    background-color: #333;
+  .page-shell:before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: radial-gradient(rgba(0, 0, 0, 0.05) 1px, transparent 1px);
+    background-size: 24px 24px;
+    opacity: 0.35;
+    pointer-events: none;
+  }
+
+  .nav-glass {
+    background: rgba(15, 15, 20, 0.85);
+    backdrop-filter: blur(14px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .brand-mark {
+    background: var(--accent);
     color: white;
-    border: 1px solid #555;
+    padding: 6px 12px;
+    border-radius: 999px;
+    font-weight: 700;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .card {
+    border: 0;
+    border-radius: 18px;
+    box-shadow: var(--shadow);
+    background: #ffffff;
+  }
+
+  .card.reveal {
+    animation: floatIn 0.6s ease both;
+  }
+
+  @keyframes floatIn {
+    from {
+      transform: translateY(12px);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+
+  .btn-accent {
+    background: var(--accent);
+    color: white;
+    border: none;
+  }
+
+  .btn-accent:hover {
+    background: var(--accent-dark);
+    color: white;
+  }
+
+  .pill {
+    border-radius: 999px;
+    padding: 6px 14px;
+    border: 1px solid rgba(0, 0, 0, 0.12);
+    background: white;
+  }
+
+  .pill input {
+    margin-right: 6px;
+  }
+
+  .dark-mode {
+    background: #0d0d12;
+    color: #f3f3f3;
   }
 
   .dark-mode .card {
-    background-color: #1e1e1e;
-    color: white;
+    background: #1b1b22;
+    color: #f3f3f3;
   }
 
   .dark-toggle {
     cursor: pointer;
-    font-size: 1.3rem;
+    font-size: 1.2rem;
     margin-left: 10px;
   }
 
   .logo {
-    height: 60px;
+    height: 48px;
     margin-left: 10px;
   }
-
-
 </style>
 
   {% block extra_css %}{% endblock %}
 </head>
-<body>
+<body class="page-shell">
 
 <!-- Navbar -->
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm">
+<nav class="navbar navbar-expand-lg navbar-dark nav-glass shadow-sm">
   <div class="container-fluid">
-    <a class="navbar-brand fw-bold" href="{% url 'report_scam' %}">Scam Sentry</a>
+    <a class="navbar-brand fw-bold" href="{% url 'report_scam' %}">
+      <span class="brand-mark">Scam Sentry</span>
+    </a>
     <img src="{% static 'Scam_reports/images/logo.png' %}" alt="Scam Sentry Logo" class="logo">
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -85,12 +157,15 @@
 
     <div class="collapse navbar-collapse" id="navbarNav">
       <ul class="navbar-nav ms-auto">
-        <li class="nav-item"><a class="nav-link" href="{% url 'report_list' %}">View Reports</a></li>
+        <li class="nav-item"><a class="nav-link" href="{% url 'report_list' %}">Browse Reports</a></li>
         <li class="nav-item"><a class="nav-link" href="{% url 'feedback' %}">Feedback</a></li>
         {% if user.is_authenticated %}
          
 
           <li class="nav-item"><a class="nav-link" href="{% url 'user_dashboard' %}">Dashboard</a></li>
+          {% if user.is_staff %}
+            <li class="nav-item"><a class="nav-link" href="{% url 'moderation_queue' %}">Moderation</a></li>
+          {% endif %}
           <li class="nav-item">
             <form method="post" action="{% url 'account_logout' %}" class="d-inline">{% csrf_token %}
               <button type="submit" class="btn btn-danger btn-sm">Logout</button>
@@ -109,7 +184,7 @@
 </nav>
 
 <!-- Main content -->
-<div class="container my-4">
+<div class="container my-4 position-relative" style="z-index: 1;">
   {% block content %}{% endblock %}
 </div>
 

@@ -1,0 +1,11 @@
+﻿{% extends 'base.html' %}
+
+{% block title %}Thanks for Reporting{% endblock %}
+
+{% block content %}
+<div class="text-center py-4">
+  <h2>Thanks for reporting an issue</h2>
+  <p class="text-muted">We will review it as soon as possible.</p>
+  <a href="{% url 'report_list' %}" class="btn btn-accent mt-2">Back to Reports</a>
+</div>
+{% endblock %}

@@ -1,0 +1,11 @@
+﻿{% extends 'base.html' %}
+
+{% block title %}Comment Received{% endblock %}
+
+{% block content %}
+<div class="text-center py-4">
+  <h2>Thanks for your comment</h2>
+  <p class="text-muted">Your comment will appear after moderation.</p>
+  <a href="{% url 'report_detail' report.id %}" class="btn btn-accent">Back to Report</a>
+</div>
+{% endblock %}

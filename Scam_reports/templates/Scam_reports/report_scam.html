@@ -1,80 +1,169 @@
-{% extends 'base.html' %}
+﻿{% extends 'base.html' %}
 {% load form_tags %}
 {% block title %}Report a Scam{% endblock %}
+{% block meta_description %}Report an online scam in minutes. Help protect others by sharing verified details and evidence.{% endblock %}
 
 {% block content %}
-<h1 class="text-center mb-4 text-primary">Report a Scam</h1>
-
-<form method="POST" id="scamReportForm" enctype="multipart/form-data" class="p-4 border rounded bg-white shadow-sm">
-  {% csrf_token %}
-  {% for field in form %}
-    {% if field.name == "scam_type" %}
-      <div class="mb-3">
-        <label class="form-label fw-bold text-dark">
-          <i class="fas fa-check-double"></i> {{ field.label }}
-        </label>
-        <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-2">
-          {% for checkbox in field %}
-            <div class="col">
-              <div class="form-check">
-                {{ checkbox.tag }}
-                <label class="form-check-label fw-semibold" for="{{ checkbox.id_for_label }}">
-  <span class="scam-label-text">
-    {% if "phishing" in checkbox.choice_label|lower %} 🐟
-    {% elif "investment" in checkbox.choice_label|lower %} 💰
-    {% elif "romance" in checkbox.choice_label|lower %} ❤️
-    {% elif "purchase" in checkbox.choice_label|lower %} 🛒
-    {% elif "impersonation" in checkbox.choice_label|lower %} 🕵️
-    {% elif "job" in checkbox.choice_label|lower %} 🧑‍💼
-    {% elif "crypto" in checkbox.choice_label|lower %} ₿
-    {% elif "giveaway" in checkbox.choice_label|lower %} 🎁
-    {% elif "charity" in checkbox.choice_label|lower %} 🤝
-    {% elif "tech" in checkbox.choice_label|lower %} 💻
-    {% else %} ✅
-    {% endif %}
-    {{ checkbox.choice_label }}
-  </span>
-</label>
-
-              </div>
-            </div>
-          {% endfor %}
-        </div>
-        {% if field.errors %}
-          <div class="text-danger small">{{ field.errors }}</div>
-        {% endif %}
-      </div>
-    {% else %}
-      <div class="mb-3">
-        <label for="{{ field.id_for_label }}" class="form-label fw-bold text-dark">
-          {% if "name_or_number" in field.name %}<i class="fas fa-user"></i>
-          {% elif "social_media" in field.name %}<i class="fas fa-hashtag"></i>
-          {% elif "description" in field.name %}<i class="fas fa-align-left"></i>
-          {% elif "evidence_text" in field.name %}<i class="fas fa-file-alt"></i>
-          {% elif "evidence_file" in field.name or "evidence" in field.name %}<i class="fas fa-paperclip"></i>
-          {% endif %}
-          {{ field.label }}
-        </label>
-        {{ field|add_class:"form-control" }}
-        {% if field.errors %}
-          <div class="text-danger small">{{ field.errors }}</div>
-        {% endif %}
-      </div>
-    {% endif %}
-  {% endfor %}
-<div class="text-center mt-2">
-  <div id="spinner" class="spinner-border text-success" style="display: none;" role="status">
-    <span class="visually-hidden">Loading...</span>
+<div class="scam-hero mb-4">
+  <div>
+    <p class="text-uppercase fw-bold text-muted mb-2">Community Alert Hub</p>
+    <h1 class="display-5">Report a scam. Protect the next person.</h1>
+    <p class="lead text-muted">Share details, evidence, and scam type. Every report strengthens collective defense.</p>
   </div>
-  
+  <div class="hero-card card p-3">
+    <div class="d-flex align-items-center gap-3">
+      <div class="badge bg-dark text-light">Live Safety</div>
+      <span class="text-muted small">Reports update in real time.</span>
+    </div>
+    <div class="mt-3">
+      <div class="fw-bold">Tip</div>
+      <div class="text-muted small">Remove personal info before uploading evidence.</div>
+    </div>
+  </div>
 </div>
-  <button type="submit" class="btn btn-primary">Submit Report</button>
+
+{% if error_message %}
+  <div class="alert alert-danger">{{ error_message }}</div>
+{% endif %}
+
+<form method="POST" id="scamReportForm" enctype="multipart/form-data" class="p-4 card reveal">
+  {% csrf_token %}
+
+  <div class="stepper mb-4">
+    <button type="button" class="step active" data-step="1">1. Details</button>
+    <button type="button" class="step" data-step="2">2. Evidence</button>
+  </div>
+
+  <div class="step-panel" data-step="1">
+    <div class="mb-3">
+      <label for="{{ form.name_or_number.id_for_label }}" class="form-label fw-bold">Name or Number</label>
+      {{ form.name_or_number|add_class:"form-control" }}
+      {% if form.name_or_number.errors %}
+        <div class="text-danger small">{{ form.name_or_number.errors }}</div>
+      {% endif %}
+    </div>
+
+    <div class="mb-3">
+      <label for="{{ form.social_media.id_for_label }}" class="form-label fw-bold">Platform or Handle</label>
+      {{ form.social_media|add_class:"form-control" }}
+      {% if form.social_media.errors %}
+        <div class="text-danger small">{{ form.social_media.errors }}</div>
+      {% endif %}
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label fw-bold"><i class="fas fa-check-double"></i> Scam Types</label>
+      <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-2">
+        {% for checkbox in form.scam_type %}
+          <div class="col">
+            <div class="form-check">
+              {{ checkbox.tag }}
+              <label class="form-check-label fw-semibold" for="{{ checkbox.id_for_label }}">
+                <span class="scam-label-text">
+                  {% if "phishing" in checkbox.choice_label|lower %} 🐟
+                  {% elif "investment" in checkbox.choice_label|lower %} 💰
+                  {% elif "romance" in checkbox.choice_label|lower %} ❤️
+                  {% elif "impersonation" in checkbox.choice_label|lower %} 🕵️
+                  {% elif "job" in checkbox.choice_label|lower %} 🧑‍💼
+                  {% elif "crypto" in checkbox.choice_label|lower %} ₿
+                  {% elif "giveaway" in checkbox.choice_label|lower %} 🎁
+                  {% elif "charity" in checkbox.choice_label|lower %} 🤝
+                  {% elif "tech" in checkbox.choice_label|lower %} 💻
+                  {% else %} ✅
+                  {% endif %}
+                  {{ checkbox.choice_label }}
+                </span>
+              </label>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+      {% if form.scam_type.errors %}
+        <div class="text-danger small">{{ form.scam_type.errors }}</div>
+      {% endif %}
+    </div>
+
+    <div class="mb-3">
+      <label for="{{ form.description.id_for_label }}" class="form-label fw-bold">What happened?</label>
+      {{ form.description|add_class:"form-control" }}
+      {% if form.description.errors %}
+        <div class="text-danger small">{{ form.description.errors }}</div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="step-panel d-none" data-step="2">
+    <div class="mb-3">
+      <label for="{{ form.evidence_text.id_for_label }}" class="form-label fw-bold">Evidence (text)</label>
+      {{ form.evidence_text|add_class:"form-control" }}
+      {% if form.evidence_text.errors %}
+        <div class="text-danger small">{{ form.evidence_text.errors }}</div>
+      {% endif %}
+    </div>
+
+    <div class="mb-3">
+      <label for="{{ form.evidence_file.id_for_label }}" class="form-label fw-bold">Evidence (file)</label>
+      {{ form.evidence_file|add_class:"form-control" }}
+      <div class="form-text">PDF, JPG, PNG, or WebP. Max 5MB.</div>
+      {% if form.evidence_file.errors %}
+        <div class="text-danger small">{{ form.evidence_file.errors }}</div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="text-center mt-3">
+    <div id="spinner" class="spinner-border text-success" style="display: none;" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+  </div>
+
+  <div class="d-flex justify-content-between mt-3">
+    <button type="button" class="btn btn-outline-dark" id="prevStep" disabled>Back</button>
+    <button type="button" class="btn btn-accent" id="nextStep">Next</button>
+    <button type="submit" class="btn btn-accent d-none" id="submitBtn">Submit Report</button>
+  </div>
 </form>
+
 <script>
   document.addEventListener("DOMContentLoaded", () => {
     const form = document.getElementById("scamReportForm");
     const spinner = document.getElementById("spinner");
     const csrfToken = form.querySelector('input[name="csrfmiddlewaretoken"]').value;
+    const steps = document.querySelectorAll(".step");
+    const panels = document.querySelectorAll(".step-panel");
+    const nextBtn = document.getElementById("nextStep");
+    const prevBtn = document.getElementById("prevStep");
+    const submitBtn = document.getElementById("submitBtn");
+    let currentStep = 1;
+
+    const updateSteps = () => {
+      steps.forEach((step) => {
+        step.classList.toggle("active", step.dataset.step == currentStep);
+      });
+      panels.forEach((panel) => {
+        panel.classList.toggle("d-none", panel.dataset.step != currentStep);
+      });
+      prevBtn.disabled = currentStep === 1;
+      nextBtn.classList.toggle("d-none", currentStep === 2);
+      submitBtn.classList.toggle("d-none", currentStep !== 2);
+    };
+
+    steps.forEach((step) => {
+      step.addEventListener("click", () => {
+        currentStep = Number(step.dataset.step);
+        updateSteps();
+      });
+    });
+
+    nextBtn.addEventListener("click", () => {
+      currentStep = 2;
+      updateSteps();
+    });
+
+    prevBtn.addEventListener("click", () => {
+      currentStep = 1;
+      updateSteps();
+    });
 
     form.addEventListener("submit", async (event) => {
       event.preventDefault();
@@ -95,8 +184,19 @@
         if (response.ok) {
           alert("✅ Report submitted successfully!");
           form.reset();
+          currentStep = 1;
+          updateSteps();
         } else {
-          alert("❌ Submission failed. Please try again.");
+          let message = "❌ Submission failed. Please try again.";
+          try {
+            const data = await response.json();
+            if (data && data.message) {
+              message = data.message;
+            }
+          } catch (err) {
+            // ignore JSON parse errors
+          }
+          alert(message);
         }
       } catch (error) {
         console.error("Error:", error);
@@ -105,7 +205,47 @@
         spinner.style.display = "none";
       }
     });
+
+    updateSteps();
   });
 </script>
+{% endblock %}
 
+{% block extra_css %}
+<style>
+  .scam-hero {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 20px;
+    align-items: center;
+  }
+
+  .hero-card {
+    background: linear-gradient(135deg, #ffffff 0%, #fff0e3 100%);
+  }
+
+  .stepper {
+    display: flex;
+    gap: 10px;
+  }
+
+  .step {
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    background: white;
+    padding: 6px 14px;
+    border-radius: 999px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .step.active {
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent);
+  }
+
+  .scam-label-text {
+    color: #0b0f19;
+  }
+</style>
 {% endblock %}
