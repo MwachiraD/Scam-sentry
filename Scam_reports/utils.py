@@ -36,5 +36,6 @@ def ensure_google_social_app():
             },
         )
         app.sites.add(site)
+        return True
     except (OperationalError, ProgrammingError):
-        pass
+        return False

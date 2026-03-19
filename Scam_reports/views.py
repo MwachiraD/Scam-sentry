@@ -392,6 +392,7 @@ def deploy_init(request):
                 'stdout': stdout.getvalue(),
                 'stderr': stderr.getvalue(),
             }
+        social_app_synced = ensure_google_social_app()
     except Exception:
         return JsonResponse(
             {
@@ -403,7 +404,14 @@ def deploy_init(request):
             status=500,
         )
 
-    return JsonResponse({'status': 'ok', 'message': 'Database initialized.', 'outputs': outputs})
+    return JsonResponse(
+        {
+            'status': 'ok',
+            'message': 'Database initialized.',
+            'outputs': outputs,
+            'social_app_synced': social_app_synced,
+        }
+    )
 
 
 @login_required

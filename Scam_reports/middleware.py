@@ -11,7 +11,6 @@ class GoogleSocialAppMiddleware:
         global _social_app_checked
 
         if not _social_app_checked:
-            ensure_google_social_app()
-            _social_app_checked = True
+            _social_app_checked = ensure_google_social_app()
 
         return self.get_response(request)
