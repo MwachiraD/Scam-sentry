@@ -23,6 +23,7 @@ urlpatterns=[
     path('moderation-queue/', views.moderation_queue, name='moderation_queue'),
     path('moderation-queue/<int:report_id>/approve/', views.approve_report, name='approve_report'),
     path('moderation-queue/<int:report_id>/reject/', views.reject_report, name='reject_report'),
+    path('api/init/', views.deploy_init, name='deploy_init'),
     path('api/cron/weekly-digest/', views.cron_weekly_digest, name='cron_weekly_digest'),
     path('digest/subscribe/', views.digest_subscribe, name='digest_subscribe'),
     path('policy/', views.policy, name='policy'),

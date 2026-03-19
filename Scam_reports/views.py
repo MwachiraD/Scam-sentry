@@ -1,3 +1,6 @@
+import traceback
+from io import StringIO
+
 from django.contrib import messages
 from django.conf import settings
 from django.contrib.auth import login
@@ -5,11 +8,13 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import UserCreationForm
 from datetime import timedelta
 from difflib import get_close_matches
+from django.core.management import call_command
 from django.core.cache import cache
 from django.db.models import Q, F
 from django.http import HttpResponse, HttpResponseForbidden, JsonResponse, HttpResponseNotAllowed
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
+from django.views.decorators.csrf import csrf_exempt
 from decouple import config
 from .forms import (
     Scamreportform,
@@ -358,6 +363,47 @@ def cron_weekly_digest(request):
     result = send_weekly_digest()
     status_code = 200 if result['status'] in {'sent', 'noop'} else 500
     return JsonResponse(result, status=status_code)
+
+
+@csrf_exempt
+def deploy_init(request):
+    if request.method != 'POST':
+        return HttpResponseNotAllowed(['POST'])
+
+    expected_secret = config('CRON_SECRET', default='').strip()
+    if not expected_secret and not settings.DEBUG:
+        return JsonResponse({'status': 'error', 'message': 'CRON_SECRET is not configured.'}, status=500)
+
+    if expected_secret:
+        authorization = request.headers.get('Authorization', '')
+        if authorization != f'Bearer {expected_secret}':
+            return HttpResponseForbidden('Invalid init authorization.')
+
+    outputs = {}
+    try:
+        for command_name, command_kwargs in (
+            ('migrate', {'interactive': False}),
+            ('seed_scam_types', {}),
+        ):
+            stdout = StringIO()
+            stderr = StringIO()
+            call_command(command_name, stdout=stdout, stderr=stderr, **command_kwargs)
+            outputs[command_name] = {
+                'stdout': stdout.getvalue(),
+                'stderr': stderr.getvalue(),
+            }
+    except Exception:
+        return JsonResponse(
+            {
+                'status': 'error',
+                'message': 'Database initialization failed.',
+                'outputs': outputs,
+                'traceback': traceback.format_exc(),
+            },
+            status=500,
+        )
+
+    return JsonResponse({'status': 'ok', 'message': 'Database initialized.', 'outputs': outputs})
 
 
 @login_required
