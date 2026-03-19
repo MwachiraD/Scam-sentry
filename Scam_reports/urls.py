@@ -23,6 +23,7 @@ urlpatterns=[
     path('moderation-queue/', views.moderation_queue, name='moderation_queue'),
     path('moderation-queue/<int:report_id>/approve/', views.approve_report, name='approve_report'),
     path('moderation-queue/<int:report_id>/reject/', views.reject_report, name='reject_report'),
+    path('api/cron/weekly-digest/', views.cron_weekly_digest, name='cron_weekly_digest'),
     path('digest/subscribe/', views.digest_subscribe, name='digest_subscribe'),
     path('policy/', views.policy, name='policy'),
     path('accounts/popup-close/', TemplateView.as_view(template_name='popup_close.html'), name='popup-close'),

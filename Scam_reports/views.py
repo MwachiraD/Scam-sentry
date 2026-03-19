@@ -1,4 +1,5 @@
 from django.contrib import messages
+from django.conf import settings
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import UserCreationForm
@@ -9,8 +10,6 @@ from django.db.models import Q, F
 from django.http import HttpResponse, HttpResponseForbidden, JsonResponse, HttpResponseNotAllowed
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
-from allauth.socialaccount.models import SocialApp
-from django.contrib.sites.models import Site
 from decouple import config
 from .forms import (
     Scamreportform,
@@ -30,6 +29,7 @@ from .models import (
     WatchlistItem,
     DigestSubscription,
 )
+from .services import send_weekly_digest
 from .utils import ensure_google_social_app
 
 
@@ -79,8 +79,6 @@ def _rate_limited(request, key, limit, window_seconds):
     return False
 
 def report_scam(request):
-    ensure_google_social_app()
-
     # Make sure scam_type choices are always correct
     scam_type_queryset = Scamtype.objects.all()
 
@@ -344,6 +342,24 @@ def digest_subscribe(request):
     return redirect('report_list')
 
 
+def cron_weekly_digest(request):
+    if request.method != 'GET':
+        return HttpResponseNotAllowed(['GET'])
+
+    expected_secret = config('CRON_SECRET', default='').strip()
+    if not expected_secret and not settings.DEBUG:
+        return JsonResponse({'status': 'error', 'message': 'CRON_SECRET is not configured.'}, status=500)
+
+    if expected_secret:
+        authorization = request.headers.get('Authorization', '')
+        if authorization != f'Bearer {expected_secret}':
+            return HttpResponseForbidden('Invalid cron authorization.')
+
+    result = send_weekly_digest()
+    status_code = 200 if result['status'] in {'sent', 'noop'} else 500
+    return JsonResponse(result, status=status_code)
+
+
 @login_required
 def moderation_queue(request):
     if not request.user.is_staff:
@@ -437,16 +453,6 @@ def edit_report(request, pk):
 
 def create_google_socialapp(request):
     ensure_google_social_app()
-
-    site = Site.objects.get(id=1)
-
-    app, created = SocialApp.objects.get_or_create(
-        provider='google',
-        name='Google',
-        client_id=config('GOOGLE_CLIENT_ID'),
-        secret=config('GOOGLE_CLIENT_SECRET')
-    )
-    app.sites.add(site)
-    return HttpResponse("✅ Google SocialApp created.")
+    return HttpResponse('Google SocialApp synced.')
 
 

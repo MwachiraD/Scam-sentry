@@ -10,8 +10,9 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
-from pathlib import Path
 import os
+from pathlib import Path
+from urllib.parse import urlparse
 import dj_database_url
 from decouple import config
 from dotenv import load_dotenv
@@ -35,6 +36,32 @@ SECRET_KEY = config('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG', default=False, cast=bool)
 
+SITE_NAME = config('SITE_NAME', default='Scam Sentry').strip() or 'Scam Sentry'
+SITE_URL = config('SITE_URL', default='').strip()
+
+
+def _extract_host(value):
+    value = (value or '').strip()
+    if not value:
+        return ''
+    if '://' in value:
+        parsed = urlparse(value)
+        value = parsed.netloc or parsed.path
+    return value.strip().strip('/')
+
+
+def _extract_origin(value, default_scheme='https'):
+    value = (value or '').strip()
+    if not value:
+        return ''
+    if '://' in value:
+        parsed = urlparse(value)
+        if parsed.scheme and parsed.netloc:
+            return f'{parsed.scheme}://{parsed.netloc}'
+        return ''
+    return f'{default_scheme}://{value.strip("/")}'
+
+
 ALLOWED_HOSTS = [
     host.strip()
     for host in config('ALLOWED_HOSTS', default='localhost,127.0.0.1').split(',')
@@ -43,6 +70,30 @@ ALLOWED_HOSTS = [
 RENDER_EXTERNAL_HOSTNAME = os.environ.get('RENDER_EXTERNAL_HOSTNAME')
 if RENDER_EXTERNAL_HOSTNAME:
     ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
+for dynamic_host in (
+    '.vercel.app',
+    os.environ.get('VERCEL_URL', ''),
+    os.environ.get('VERCEL_BRANCH_URL', ''),
+    os.environ.get('VERCEL_PROJECT_PRODUCTION_URL', ''),
+    _extract_host(SITE_URL),
+):
+    if dynamic_host and dynamic_host not in ALLOWED_HOSTS:
+        ALLOWED_HOSTS.append(dynamic_host)
+
+CSRF_TRUSTED_ORIGINS = [
+    origin.strip()
+    for origin in config('CSRF_TRUSTED_ORIGINS', default='').split(',')
+    if origin.strip()
+]
+for trusted_origin in (
+    'https://*.vercel.app',
+    _extract_origin(os.environ.get('VERCEL_URL', '')),
+    _extract_origin(os.environ.get('VERCEL_BRANCH_URL', '')),
+    _extract_origin(os.environ.get('VERCEL_PROJECT_PRODUCTION_URL', '')),
+    _extract_origin(SITE_URL, default_scheme='https'),
+):
+    if trusted_origin and trusted_origin not in CSRF_TRUSTED_ORIGINS:
+        CSRF_TRUSTED_ORIGINS.append(trusted_origin)
 
 GOOGLE_CLIENT_ID = config('GOOGLE_CLIENT_ID')
 GOOGLE_CLIENT_SECRET = config('GOOGLE_CLIENT_SECRET')
@@ -60,7 +111,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'Scam_reports',
+    'Scam_reports.apps.ScamReportsConfig',
     'django.contrib.sites',   
     'allauth',
     'allauth.account',
@@ -72,7 +123,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
-
+    'Scam_reports.middleware.GoogleSocialAppMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -106,7 +157,12 @@ WSGI_APPLICATION = 'newscamsentry.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 _default_db_url = f"sqlite:///{(BASE_DIR / 'db.sqlite3').as_posix()}"
-_db_url = os.getenv('DATABASE_URL')
+_db_url = os.getenv('DATABASE_URL', '').strip()
+if not _db_url and (os.getenv('VERCEL') or not DEBUG):
+    raise RuntimeError(
+        'DATABASE_URL must be set for production deployments. '
+        'SQLite fallback is only supported for local development.'
+    )
 DATABASES = {
     'default': (
         dj_database_url.parse(_db_url, conn_max_age=600, ssl_require=not DEBUG)
@@ -206,6 +262,8 @@ DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
 
 
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+USE_X_FORWARDED_HOST = True
 CSRF_COOKIE_SECURE = not DEBUG
 SESSION_COOKIE_SECURE = not DEBUG
 SECURE_BROWSER_XSS_FILTER = True
