@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load socialaccount %}
 {% load static %}
 
 {% block title %}Register{% endblock %}
@@ -21,7 +22,12 @@
         <button type="submit" class="btn btn-accent w-100">Register</button>
       </form>
 
-      <div class="text-center my-3 text-muted">Google signup is temporarily unavailable.</div>
+      <div class="text-center my-3 text-muted">or</div>
+
+      {% provider_login_url 'google' process='signup' as google_signup_url %}
+      <a href="{{ google_signup_url }}?next=/" class="btn btn-outline-dark w-100 mb-2">
+        <i class="fab fa-google"></i> Register with Google
+      </a>
 
       <div class="text-center">
         <p>Already have an account? <a href="{% url 'account_login' %}">Login</a></p>
