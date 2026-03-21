@@ -87,8 +87,25 @@ For production, use S3-compatible storage by setting:
 - AWS_ACCESS_KEY_ID
 - AWS_SECRET_ACCESS_KEY
 - AWS_S3_REGION_NAME (optional)
+- AWS_S3_ENDPOINT_URL (optional, needed for non-AWS S3-compatible providers)
+- AWS_S3_CUSTOM_DOMAIN (optional)
+- AWS_S3_ADDRESSING_STYLE (optional)
+- AWS_QUERYSTRING_AUTH (optional, defaults to `True`)
 
 When these are set, uploads use S3 via `django-storages`.
+
+Why this matters on Vercel:
+
+- Vercel Functions have a read-only filesystem with only temporary writable scratch space.
+- Files written locally can disappear after a cold start, scale event, or new deployment.
+- Different function instances do not share the same local upload directory.
+
+So "not persistent" means an uploaded evidence file may appear to work briefly, then later vanish or fail to load.
+
+Fastest production-safe path:
+
+- If you want zero extra code changes, use AWS S3.
+- If you want a cheaper S3-compatible provider like Cloudflare R2 or Backblaze B2, this repo now supports that too through `AWS_S3_ENDPOINT_URL`.
 
 ## Deploying to Vercel
 
@@ -120,6 +137,9 @@ Suggested Vercel environment variables:
 - `AWS_ACCESS_KEY_ID`
 - `AWS_SECRET_ACCESS_KEY`
 - `AWS_S3_REGION_NAME`
+- `AWS_S3_ENDPOINT_URL`
+- `AWS_S3_CUSTOM_DOMAIN`
+- `AWS_S3_ADDRESSING_STYLE`
 
 Build command:
 
@@ -135,6 +155,42 @@ python manage.py seed_scam_types
 ```
 
 The weekly digest can be triggered through the secured Django endpoint at `/api/cron/weekly-digest/`, which is already registered in `vercel.json`.
+
+### AWS S3 setup
+
+Use this if you want the simplest path with the current app.
+
+1. Create an S3 bucket in AWS.
+2. Keep the bucket private.
+3. Create an IAM user or app-specific access key with access limited to that bucket.
+4. Add these Vercel env vars:
+
+```env
+AWS_STORAGE_BUCKET_NAME=your-bucket-name
+AWS_ACCESS_KEY_ID=your-access-key-id
+AWS_SECRET_ACCESS_KEY=your-secret-access-key
+AWS_S3_REGION_NAME=your-bucket-region
+AWS_QUERYSTRING_AUTH=True
+```
+
+5. Redeploy.
+6. Upload a test evidence file and open its URL from a report page.
+
+With `AWS_QUERYSTRING_AUTH=True`, Django will generate signed URLs so files can stay private in the bucket.
+
+### Cloudflare R2 example
+
+If you prefer Cloudflare R2, set:
+
+```env
+AWS_STORAGE_BUCKET_NAME=your-bucket-name
+AWS_ACCESS_KEY_ID=your-r2-access-key-id
+AWS_SECRET_ACCESS_KEY=your-r2-secret-access-key
+AWS_S3_REGION_NAME=auto
+AWS_S3_ENDPOINT_URL=https://<ACCOUNT_ID>.r2.cloudflarestorage.com
+AWS_S3_ADDRESSING_STYLE=virtual
+AWS_QUERYSTRING_AUTH=True
+```
 
 ## Deploying to Render
 
