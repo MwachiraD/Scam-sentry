@@ -23,19 +23,13 @@ def _site_domain():
 
 def ensure_google_social_app():
     try:
-        site, _ = Site.objects.update_or_create(
+        Site.objects.update_or_create(
             id=1,
             defaults={'domain': _site_domain(), 'name': settings.SITE_NAME},
         )
-        app, _ = SocialApp.objects.update_or_create(
-            provider='google',
-            defaults={
-                'name': 'Google',
-                'client_id': settings.GOOGLE_CLIENT_ID,
-                'secret': settings.GOOGLE_CLIENT_SECRET,
-            },
-        )
-        app.sites.add(site)
+        # Google OAuth is configured from SOCIALACCOUNT_PROVIDERS in settings.
+        # Remove any DB-backed app to avoid duplicate-provider errors on Vercel.
+        SocialApp.objects.filter(provider='google').delete()
         return True
     except (OperationalError, ProgrammingError):
         return False
