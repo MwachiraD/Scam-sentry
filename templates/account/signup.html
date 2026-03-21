@@ -1,6 +1,5 @@
 {% extends 'base.html' %}
 {% load socialaccount %}
-{% load static %}
 
 {% block title %}Register{% endblock %}
 {% block meta_description %}Create your Scam Sentry account to track reports and help the community.{% endblock %}
@@ -9,7 +8,7 @@
 <div class="row justify-content-center">
   <div class="col-lg-6">
     <div class="text-center mb-3">
-      <img src="{% static 'Scam_reports/images/logo.png' %}" alt="Scam Sentry Logo" class="logo">
+      {% include "includes/brand_logo.html" with class_name="logo-auth" %}
     </div>
 
     <div class="card p-4 reveal">
