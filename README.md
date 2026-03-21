@@ -3,6 +3,24 @@
 Scam Sentry is a Django web app that lets users report, search, and browse online scams.
 It helps the public identify scam numbers, names, and social media accounts.
 
+🚩 Inspiration
+
+This project was inspired by a real-life experience during my job search.
+
+I was contacted by individuals claiming to offer a job opportunity, but they required urgent submission of documents such as HELB clearance, EACC certificate, KRA compliance, and a Certificate of Good Conduct. They created a sense of urgency by stating that the company director needed the documents within hours.
+
+They later suggested a “fast-track” option through a third party for a small fee.
+
+Recognizing the red flags — urgency, unofficial channels, and payment requests — I chose not to proceed.
+
+This experience revealed how convincing and widespread such scams are, especially for job seekers. Scam Sentry was built to help users detect, report, and avoid these fraudulent tactics.
+
+🎯 Goals
+Help users identify scam patterns
+Provide a platform to report suspicious activity
+Raise awareness about modern scam tactics
+Build a community-driven scam intelligence system
+
 ## Features
 
 - Report scams with name/number, social media handle, description, and evidence
