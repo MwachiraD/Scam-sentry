@@ -57,6 +57,42 @@ DEMO_USERS = [
         'is_superuser': False,
         'password': 'ScamSentry123!',
     },
+    {
+        'username': 'brian',
+        'email': 'brian@scamsentry.local',
+        'first_name': 'Brian',
+        'last_name': 'Kamau',
+        'is_staff': False,
+        'is_superuser': False,
+        'password': 'ScamSentry123!',
+    },
+    {
+        'username': 'grace',
+        'email': 'grace@scamsentry.local',
+        'first_name': 'Grace',
+        'last_name': 'Njeri',
+        'is_staff': False,
+        'is_superuser': False,
+        'password': 'ScamSentry123!',
+    },
+    {
+        'username': 'victor',
+        'email': 'victor@scamsentry.local',
+        'first_name': 'Victor',
+        'last_name': 'Odhiambo',
+        'is_staff': False,
+        'is_superuser': False,
+        'password': 'ScamSentry123!',
+    },
+    {
+        'username': 'caroline',
+        'email': 'caroline@scamsentry.local',
+        'first_name': 'Caroline',
+        'last_name': 'Wambui',
+        'is_staff': False,
+        'is_superuser': False,
+        'password': 'ScamSentry123!',
+    },
 ]
 
 
@@ -208,6 +244,189 @@ DEMO_REPORTS = [
         ],
         'follows': ['alerts+charity@scamsentry.local'],
     },
+    {
+        'owner': 'brian',
+        'name_or_number': 'KRA Refund Desk',
+        'social_media': 'SMS',
+        'description': 'Tax refund text asking you to verify your PIN and banking details through a fake portal before a refund can be released.',
+        'evidence_text': 'Sender copied official KRA wording and used a shortened domain.',
+        'scam_types': ['Phishing', 'Impersonation'],
+        'reported_days_ago': 1,
+        'encounter_count': 16,
+        'is_hidden': False,
+        'is_verified': True,
+        'is_resolved': False,
+        'resolution_reason': '',
+        'comments': [
+            {'name': 'Janet', 'message': 'The fake page asked for both ID number and ATM PIN.', 'is_approved': True},
+            {'name': 'Paul', 'message': 'They followed up with a call pretending to be from support.', 'is_approved': True},
+        ],
+        'follows': ['alerts+kra@scamsentry.local'],
+    },
+    {
+        'owner': 'grace',
+        'name_or_number': 'Estate Agent Pro',
+        'social_media': 'Telegram',
+        'description': 'Rental listings shared before viewing, followed by pressure to pay a booking fee to secure the house.',
+        'evidence_text': 'Photos were copied from an unrelated property listing.',
+        'scam_types': ['Rental Scam', 'Impersonation'],
+        'reported_days_ago': 2,
+        'encounter_count': 7,
+        'is_hidden': False,
+        'is_verified': False,
+        'is_resolved': False,
+        'resolution_reason': '',
+        'comments': [
+            {'name': 'Eunice', 'message': 'They refused in-person viewing unless I sent a deposit first.', 'is_approved': True},
+        ],
+        'follows': ['alerts+rentals@scamsentry.local'],
+    },
+    {
+        'owner': 'victor',
+        'name_or_number': 'UN Aid Desk',
+        'social_media': 'Email',
+        'description': 'Emergency relief email promising food support and a stipend after a registration fee is paid.',
+        'evidence_text': 'Used a free email account and mismatched UN branding.',
+        'scam_types': ['Charity Scam', 'Impersonation'],
+        'reported_days_ago': 4,
+        'encounter_count': 5,
+        'is_hidden': False,
+        'is_verified': True,
+        'is_resolved': False,
+        'resolution_reason': '',
+        'comments': [
+            {'name': 'Tom', 'message': 'They asked for mobile money instead of an official portal.', 'is_approved': True},
+        ],
+        'follows': ['alerts+aid@scamsentry.local'],
+    },
+    {
+        'owner': 'caroline',
+        'name_or_number': 'M-Pesa Reversal Unit',
+        'social_media': 'Phone Call',
+        'description': 'Caller claims you received money by mistake and tricks you into sharing one-time codes to reverse it.',
+        'evidence_text': 'Caller knew the sender name from the fake message and sounded urgent.',
+        'scam_types': ['M-Pesa Fraud', 'Impersonation'],
+        'reported_days_ago': 1,
+        'encounter_count': 14,
+        'is_hidden': False,
+        'is_verified': True,
+        'is_resolved': False,
+        'resolution_reason': '',
+        'comments': [
+            {'name': 'Sam', 'message': 'Same scam but they asked me to forward a security SMS.', 'is_approved': True},
+        ],
+        'follows': ['alerts+mpesa@scamsentry.local'],
+    },
+    {
+        'owner': 'aisha',
+        'name_or_number': 'Passport Processing Team',
+        'social_media': 'WhatsApp',
+        'description': 'Fraudulent passport-expedite service requesting payment and ID photos before any official application is filed.',
+        'evidence_text': 'Used a copied immigration logo and promised same-day processing.',
+        'scam_types': ['WhatsApp Scam', 'Impersonation'],
+        'reported_days_ago': 0,
+        'encounter_count': 2,
+        'is_hidden': True,
+        'is_verified': False,
+        'is_resolved': False,
+        'resolution_reason': '',
+        'comments': [],
+        'follows': [],
+        'abuse_reports': [
+            {'reason': 'personal_info', 'email': 'privacy@scamsentry.local', 'details': 'Needs moderator review because an ID image may be attached offline.', 'status': 'open'},
+        ],
+    },
+    {
+        'owner': 'daniel',
+        'name_or_number': 'iPhone Deals KE',
+        'social_media': 'Instagram',
+        'description': 'Too-good-to-be-true phone deals with full payment upfront and fake shipping confirmations after checkout.',
+        'evidence_text': 'Merchant deleted comments from buyers asking for tracking proof.',
+        'scam_types': ['Marketplace Scam', 'Purchase Scam'],
+        'reported_days_ago': 5,
+        'encounter_count': 10,
+        'is_hidden': False,
+        'is_verified': True,
+        'is_resolved': True,
+        'resolution_reason': 'The storefront account was removed after multiple complaints.',
+        'comments': [
+            {'name': 'Lee', 'message': 'They kept sending edited screenshots of courier systems.', 'is_approved': True},
+        ],
+        'follows': ['alerts+devices@scamsentry.local'],
+    },
+    {
+        'owner': 'brian',
+        'name_or_number': 'Prime Study Abroad',
+        'social_media': 'Instagram / Facebook',
+        'description': 'Study-abroad agency promises guaranteed visas after an assessment fee, then pushes fake embassy appointments.',
+        'evidence_text': 'Agency gave inconsistent university names and no official reference numbers.',
+        'scam_types': ['Fake Job', 'Loan Scam', 'Impersonation'],
+        'reported_days_ago': 3,
+        'encounter_count': 6,
+        'is_hidden': False,
+        'is_verified': False,
+        'is_resolved': False,
+        'resolution_reason': '',
+        'comments': [
+            {'name': 'Mercy', 'message': 'They switched from visa to scholarship language halfway through the chat.', 'is_approved': True},
+        ],
+        'follows': ['alerts+travel@scamsentry.local'],
+    },
+    {
+        'owner': 'grace',
+        'name_or_number': 'Bank Update Bot',
+        'social_media': 'SMS',
+        'description': 'Fraudulent bank-security prompt saying your account is frozen until you verify through a malicious login page.',
+        'evidence_text': 'Link used a lookalike domain and requested card PIN data.',
+        'scam_types': ['Phishing', 'Account Takeover'],
+        'reported_days_ago': 2,
+        'encounter_count': 18,
+        'is_hidden': False,
+        'is_verified': True,
+        'is_resolved': False,
+        'resolution_reason': '',
+        'comments': [
+            {'name': 'Peter', 'message': 'The message looked real until I checked the sender ID closely.', 'is_approved': True},
+        ],
+        'follows': ['alerts+bank@scamsentry.local'],
+    },
+    {
+        'owner': 'victor',
+        'name_or_number': 'School Fees Support Fund',
+        'social_media': 'Facebook',
+        'description': 'A fake scholarship drive asking struggling families to pay a registration amount before receiving bursary funds.',
+        'evidence_text': 'Post copied photos from a real NGO campaign and changed the payment number.',
+        'scam_types': ['Charity Scam', 'Giveaway Scam'],
+        'reported_days_ago': 0,
+        'encounter_count': 1,
+        'is_hidden': True,
+        'is_verified': False,
+        'is_resolved': False,
+        'resolution_reason': '',
+        'comments': [],
+        'follows': [],
+    },
+    {
+        'owner': 'caroline',
+        'name_or_number': 'Global Freight Customs',
+        'social_media': 'Email / WhatsApp',
+        'description': 'Customs-clearance messages claim a parcel is held until a release fee is paid to a mobile wallet.',
+        'evidence_text': 'Shared fake customs forms with mismatched invoice numbers.',
+        'scam_types': ['Delivery Scam', 'Impersonation'],
+        'reported_days_ago': 6,
+        'encounter_count': 6,
+        'is_hidden': False,
+        'is_verified': True,
+        'is_resolved': False,
+        'resolution_reason': '',
+        'comments': [
+            {'name': 'Nancy', 'message': 'The shipping ID was invalid on the real courier site.', 'is_approved': True},
+        ],
+        'follows': ['alerts+shipping@scamsentry.local'],
+        'abuse_reports': [
+            {'reason': 'other', 'email': 'moderation@scamsentry.local', 'details': 'Keep an eye on this thread because more victim details may arrive.', 'status': 'reviewing'},
+        ],
+    },
 ]
 
 
@@ -325,6 +544,10 @@ class Command(BaseCommand):
             ('miriam', 'BitLion Academy', 'Telegram'),
             ('daniel', '0722 555 014', 'WhatsApp'),
             ('aisha', 'MamaRose Electronics', 'Facebook Marketplace'),
+            ('brian', 'Bank Update Bot', 'SMS'),
+            ('grace', 'M-Pesa Reversal Unit', 'Phone Call'),
+            ('victor', 'Estate Agent Pro', 'Telegram'),
+            ('caroline', 'KRA Refund Desk', 'SMS'),
         ]
         for username, name_or_number, social_media in watch_targets:
             WatchlistItem.objects.get_or_create(
@@ -333,12 +556,27 @@ class Command(BaseCommand):
                 social_media=social_media,
             )
 
-        for username in ('miriam', 'daniel', 'aisha'):
+        for username in ('miriam', 'daniel', 'aisha', 'brian', 'grace', 'victor', 'caroline'):
             user = users[username]
             DigestSubscription.objects.update_or_create(
                 email=user.email,
                 defaults={
                     'user': user,
+                    'is_active': True,
+                    'is_verified': True,
+                    'verification_token': '',
+                    'verified_at': now,
+                },
+            )
+        for email in (
+            'community-digest@scamsentry.local',
+            'moderation-digest@scamsentry.local',
+            'alerts+weekly@scamsentry.local',
+        ):
+            DigestSubscription.objects.update_or_create(
+                email=email,
+                defaults={
+                    'user': None,
                     'is_active': True,
                     'is_verified': True,
                     'verification_token': '',
@@ -357,6 +595,16 @@ class Command(BaseCommand):
                 'email': 'daniel@scamsentry.local',
                 'message': 'Would be good to surface trending scam categories on the homepage.',
             },
+            {
+                'name': 'Grace Njeri',
+                'email': 'grace@scamsentry.local',
+                'message': 'The moderation queue now feels realistic, especially with open abuse reports.',
+            },
+            {
+                'name': 'Victor Odhiambo',
+                'email': 'victor@scamsentry.local',
+                'message': 'A small analytics section for common scam channels would be useful.',
+            },
         ]
         for feedback_item in feedback_items:
             Feedback.objects.update_or_create(
@@ -373,3 +621,7 @@ class Command(BaseCommand):
         self.stdout.write(f'  miriam / {password}')
         self.stdout.write(f'  daniel / {password}')
         self.stdout.write(f'  aisha / {password}')
+        self.stdout.write(f'  brian / {password}')
+        self.stdout.write(f'  grace / {password}')
+        self.stdout.write(f'  victor / {password}')
+        self.stdout.write(f'  caroline / {password}')

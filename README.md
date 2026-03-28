@@ -88,6 +88,10 @@ Demo accounts created by `seed_demo_data`:
 - `miriam` / `ScamSentry123!`
 - `daniel` / `ScamSentry123!`
 - `aisha` / `ScamSentry123!`
+- `brian` / `ScamSentry123!`
+- `grace` / `ScamSentry123!`
+- `victor` / `ScamSentry123!`
+- `caroline` / `ScamSentry123!`
 
 ## Environment Variables
 
