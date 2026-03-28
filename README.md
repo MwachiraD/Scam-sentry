@@ -26,6 +26,7 @@ Build a community-driven scam intelligence system
 - Report scams with name/number, social media handle, description, and evidence
 - Search reports by name, number, or handle
 - User accounts with email/password or Google OAuth
+- Password reset flow with explicit rate limiting
 - Personal dashboard to view and edit reports
 - Mark reports as resolved
 - Public report list with status filters
@@ -72,6 +73,7 @@ Note: If you see `decouple.UndefinedValueError: SECRET_KEY not found`, it means 
 ```bash
 python manage.py migrate
 python manage.py seed_scam_types
+python manage.py seed_demo_data
 ```
 
 5) Start the server
@@ -79,6 +81,13 @@ python manage.py seed_scam_types
 ```bash
 python manage.py runserver
 ```
+
+Demo accounts created by `seed_demo_data`:
+
+- `demo_admin` / `DemoAdmin123!`
+- `miriam` / `ScamSentry123!`
+- `daniel` / `ScamSentry123!`
+- `aisha` / `ScamSentry123!`
 
 ## Environment Variables
 
@@ -180,6 +189,8 @@ python manage.py migrate
 python manage.py seed_scam_types
 ```
 
+Do not run `seed_demo_data` in production.
+
 The weekly digest can be triggered through the secured Django endpoint at `/api/cron/weekly-digest/`, which is already registered in `vercel.json`.
 
 The `/api/init/` endpoint is no longer intended for public deployment automation. Run migrations and seed commands from your deployment command or an authenticated admin session instead of exposing setup actions over HTTP.
@@ -230,5 +241,6 @@ AWS_QUERYSTRING_AUTH=True
 ## Notes
 
 - The seed command is idempotent and can be run multiple times.
+- `seed_demo_data` is also idempotent and refreshes the same demo users and sample reports.
 - For Google OAuth, configure the authorized redirect URI in the Google Cloud Console.
 - Digest subscriptions and report-follow alerts now use email confirmation before activation.

@@ -4,8 +4,11 @@ from unittest.mock import patch
 from django.contrib.auth.models import User
 from django.core import mail
 from django.core.cache import cache
+from django.core.management import call_command
 from django.test import Client, TestCase, override_settings
 from django.urls import reverse
+
+from feedback.models import Feedback
 
 from .models import DigestSubscription, ReportComment, ReportFollow, Scamreports, Scamtype
 
@@ -134,3 +137,23 @@ class SecurityHardeningTests(TestCase):
         self.assertIn('Content-Security-Policy', response.headers)
         self.assertIn('nonce-', response.headers['Content-Security-Policy'])
         self.assertContains(response, 'nonce="')
+
+    def test_password_reset_page_uses_custom_template(self):
+        response = self.client.get(reverse('account_reset_password'))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'account/password_reset.html')
+        self.assertContains(response, 'Send reset link')
+
+
+class DemoDataCommandTests(TestCase):
+    def test_seed_demo_data_is_repeatable(self):
+        call_command('seed_demo_data', verbosity=0)
+        call_command('seed_demo_data', verbosity=0)
+
+        self.assertTrue(User.objects.filter(username='demo_admin', is_staff=True).exists())
+        self.assertTrue(User.objects.filter(username='miriam').exists())
+        self.assertGreaterEqual(Scamreports.objects.count(), 8)
+        self.assertGreaterEqual(ReportComment.objects.count(), 5)
+        self.assertGreaterEqual(ReportFollow.objects.count(), 5)
+        self.assertGreaterEqual(DigestSubscription.objects.count(), 3)
+        self.assertGreaterEqual(Feedback.objects.count(), 2)

@@ -23,8 +23,8 @@
 
       <div class="text-center my-3 text-muted">or</div>
 
-      {% provider_login_url 'google' process='signup' as google_signup_url %}
-      <a href="{{ google_signup_url }}?next=/" class="btn btn-outline-dark w-100 mb-2">
+      {% provider_login_url 'google' process='signup' next='/' as google_signup_url %}
+      <a href="{{ google_signup_url }}" class="btn btn-outline-dark w-100 mb-2">
         <i class="fab fa-google"></i> Register with Google
       </a>
 

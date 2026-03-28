@@ -27,12 +27,13 @@
 
       <div class="text-center my-3 text-muted">or</div>
 
-      {% provider_login_url 'google' process='login' as google_login_url %}
-      <a href="{{ google_login_url }}?next=/dashboard/" class="btn btn-outline-dark w-100 mb-2">
+      {% provider_login_url 'google' process='login' next='/dashboard/' as google_login_url %}
+      <a href="{{ google_login_url }}" class="btn btn-outline-dark w-100 mb-2">
         <i class="fab fa-google"></i> Login with Google
       </a>
 
       <div class="text-center">
+        <p><a href="{% url 'account_reset_password' %}">Forgot your password?</a></p>
         <p>Don't have an account? <a href="{% url 'account_signup' %}">Register</a></p>
       </div>
     </div>
