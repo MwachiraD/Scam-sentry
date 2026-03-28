@@ -90,7 +90,15 @@ class Scamreports(models.Model):
 class ReportFollow(models.Model):
     report = models.ForeignKey(Scamreports, on_delete=models.CASCADE, related_name="follows")
     email = models.EmailField()
+    is_verified = models.BooleanField(default=True)
+    verification_token = models.CharField(max_length=128, blank=True, db_index=True)
+    verified_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['report', 'email'], name='unique_report_follow_email'),
+        ]
 
     def __str__(self):
         return f"{self.email} -> {self.report_id}"
@@ -134,6 +142,9 @@ class DigestSubscription(models.Model):
     email = models.EmailField(unique=True)
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
     is_active = models.BooleanField(default=True)
+    is_verified = models.BooleanField(default=True)
+    verification_token = models.CharField(max_length=128, blank=True, db_index=True)
+    verified_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

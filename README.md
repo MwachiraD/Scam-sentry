@@ -61,6 +61,8 @@ GOOGLE_CLIENT_SECRET=your-google-client-secret
 EMAIL_HOST_USER=your-email@example.com
 EMAIL_HOST_PASSWORD=your-email-password
 CRON_SECRET=change-me
+CRON_ALLOWED_IPS=
+TRUST_X_FORWARDED_FOR=False
 ```
 
 Note: If you see `decouple.UndefinedValueError: SECRET_KEY not found`, it means the `.env` file is missing or the `SECRET_KEY` value is not set.
@@ -93,8 +95,10 @@ Required:
 Optional:
 - CSRF_TRUSTED_ORIGINS
 - CRON_SECRET
+- CRON_ALLOWED_IPS
 - DATABASE_URL (defaults to local SQLite locally, but is required in production)
 - SITE_NAME
+- TRUST_X_FORWARDED_FOR (enable only behind a trusted reverse proxy)
 
 ## Evidence File Storage
 
@@ -136,6 +140,8 @@ Important production requirements:
 - Set `SITE_URL` to your production domain, for example `https://your-domain.vercel.app` or your custom domain.
 - Set `ALLOWED_HOSTS` and `CSRF_TRUSTED_ORIGINS` to include your Vercel domain and any custom domain.
 - Set `CRON_SECRET` so the weekly digest endpoint can be called safely by Vercel Cron.
+- Set `CRON_ALLOWED_IPS` if your scheduler has stable egress IPs and you want an extra allowlist check.
+- Leave `TRUST_X_FORWARDED_FOR=False` unless you are sure your deployment is behind a trusted proxy that rewrites that header.
 
 Suggested Vercel environment variables:
 
@@ -151,6 +157,8 @@ Suggested Vercel environment variables:
 - `EMAIL_HOST_USER`
 - `EMAIL_HOST_PASSWORD`
 - `CRON_SECRET`
+- `CRON_ALLOWED_IPS`
+- `TRUST_X_FORWARDED_FOR`
 - `AWS_STORAGE_BUCKET_NAME`
 - `AWS_ACCESS_KEY_ID`
 - `AWS_SECRET_ACCESS_KEY`
@@ -173,6 +181,8 @@ python manage.py seed_scam_types
 ```
 
 The weekly digest can be triggered through the secured Django endpoint at `/api/cron/weekly-digest/`, which is already registered in `vercel.json`.
+
+The `/api/init/` endpoint is no longer intended for public deployment automation. Run migrations and seed commands from your deployment command or an authenticated admin session instead of exposing setup actions over HTTP.
 
 ### AWS S3 setup
 
@@ -221,3 +231,4 @@ AWS_QUERYSTRING_AUTH=True
 
 - The seed command is idempotent and can be run multiple times.
 - For Google OAuth, configure the authorized redirect URI in the Google Cloud Console.
+- Digest subscriptions and report-follow alerts now use email confirmation before activation.

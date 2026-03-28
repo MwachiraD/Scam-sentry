@@ -120,7 +120,7 @@
   </div>
 </form>
 
-<script>
+<script nonce="{{ CSP_NONCE }}">
   document.addEventListener("DOMContentLoaded", () => {
     const form = document.getElementById("scamReportForm");
     const spinner = document.getElementById("spinner");
@@ -221,7 +221,7 @@
 {% endblock %}
 
 {% block extra_css %}
-<style>
+<style nonce="{{ CSP_NONCE }}">
   .scam-hero {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));

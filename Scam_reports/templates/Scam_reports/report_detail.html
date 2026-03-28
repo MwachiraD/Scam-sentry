@@ -120,23 +120,23 @@
   </div>
 </div>
 
-<script type="application/ld+json">
+<script nonce="{{ CSP_NONCE }}" type="application/ld+json">
 {
   "@context": "https://schema.org",
   "@type": "Report",
-  "headline": "Scam report for {{ report.name_or_number }}",
+  "headline": "Scam report for {{ report.name_or_number|escapejs }}",
   "datePublished": "{{ report.date_reported|date:'c' }}",
   "about": {
     "@type": "Thing",
-    "name": "{{ report.social_media }}"
+    "name": "{{ report.social_media|escapejs }}"
   },
-  "description": "{{ report.description|truncatewords:25 }}"
+  "description": "{{ report.description|truncatewords:25|escapejs }}"
 }
 </script>
 {% endblock %}
 
 {% block extra_js %}
-<script>
+<script nonce="{{ CSP_NONCE }}">
   document.getElementById("copyLinkBtn").addEventListener("click", async () => {
     try {
       await navigator.clipboard.writeText(window.location.href);

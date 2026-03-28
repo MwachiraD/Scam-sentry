@@ -168,7 +168,7 @@
 {% endblock %}
 
 {% block extra_js %}
-<script>
+<script nonce="{{ CSP_NONCE }}">
   document.querySelectorAll(".encounter-form").forEach((form) => {
     form.addEventListener("submit", async (event) => {
       event.preventDefault();

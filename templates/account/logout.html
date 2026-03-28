@@ -11,7 +11,7 @@
   </div>
 </div>
 
-<script>
+<script nonce="{{ CSP_NONCE }}">
   setTimeout(() => {
     window.location.href = "{% url 'report_scam' %}";
   }, 1500);

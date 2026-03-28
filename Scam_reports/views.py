@@ -1,4 +1,6 @@
+import logging
 import traceback
+from ipaddress import ip_address
 from io import StringIO
 
 from django.contrib import messages
@@ -14,7 +16,6 @@ from django.db.models import Q, F
 from django.http import HttpResponse, HttpResponseForbidden, JsonResponse, HttpResponseNotAllowed
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
-from django.views.decorators.csrf import csrf_exempt
 from decouple import config
 from .forms import (
     Scamreportform,
@@ -23,22 +24,34 @@ from .forms import (
     ReportCommentForm,
     WatchlistForm,
     DigestSubscriptionForm,
+    ResolutionForm,
 )
 from .models import (
     Scamreports,
     Scamtype,
     ReportAbuse,
-    ReportFollow,
     ReportComment,
     ReportEditLog,
     WatchlistItem,
-    DigestSubscription,
 )
-from .services import send_weekly_digest
+from .services import (
+    create_or_refresh_digest_subscription,
+    create_or_refresh_report_follow,
+    send_weekly_digest,
+    verify_digest_subscription_token,
+    verify_report_follow_token,
+)
 from .utils import ensure_google_social_app
 
+logger = logging.getLogger(__name__)
+STAFF_FORBIDDEN_MESSAGE = "You don't have permission to do that."
 
+@login_required
 def create_scam_types(request):
+    if request.method != 'POST':
+        return HttpResponseNotAllowed(['POST'])
+    if not request.user.is_staff:
+        return _forbidden(request, STAFF_FORBIDDEN_MESSAGE, event='blocked create_scam_types access')
     types = [
         'Phishing',
         'Impersonation',
@@ -63,11 +76,40 @@ def create_scam_types(request):
         Scamtype.objects.get_or_create(name=t)
     return HttpResponse("Scam types created.")
 
+
+def _normalized_ip(value):
+    try:
+        return str(ip_address((value or '').strip()))
+    except ValueError:
+        return ''
+
+
 def _get_client_ip(request):
-    forwarded = request.META.get('HTTP_X_FORWARDED_FOR')
-    if forwarded:
-        return forwarded.split(',')[0].strip()
-    return request.META.get('REMOTE_ADDR', '')
+    remote_addr = _normalized_ip(request.META.get('REMOTE_ADDR', ''))
+    if getattr(settings, 'TRUST_X_FORWARDED_FOR', False):
+        forwarded = request.META.get('HTTP_X_FORWARDED_FOR', '')
+        if forwarded:
+            forwarded_ip = _normalized_ip(forwarded.split(',')[0])
+            if forwarded_ip:
+                return forwarded_ip
+    return remote_addr
+
+
+def _forbidden(request, message, event='forbidden request'):
+    user_label = request.user.pk if getattr(request, 'user', None) and request.user.is_authenticated else 'anonymous'
+    logger.warning('%s user=%s ip=%s path=%s', event, user_label, _get_client_ip(request), request.path)
+    return HttpResponseForbidden(message)
+
+
+def _request_ip_allowed(request, setting_name):
+    allowed_ips = {
+        _normalized_ip(ip)
+        for ip in getattr(settings, setting_name, [])
+        if _normalized_ip(ip)
+    }
+    if not allowed_ips:
+        return True
+    return _get_client_ip(request) in allowed_ips
 
 def _rate_limited(request, key, limit, window_seconds):
     ip = _get_client_ip(request)
@@ -79,6 +121,7 @@ def _rate_limited(request, key, limit, window_seconds):
         cache.set(cache_key, 1, window_seconds)
         return False
     if current >= limit:
+        logger.warning('rate limit triggered key=%s ip=%s path=%s', key, ip, request.path)
         return True
     cache.incr(cache_key)
     return False
@@ -209,10 +252,16 @@ def report_list(request):
 def encounter_report(request, report_id):
     if request.method != 'POST':
         return HttpResponseNotAllowed(['POST'])
+    if _rate_limited(request, 'encounter_report', limit=20, window_seconds=60):
+        message = 'Too many encounter submissions. Please wait a minute and try again.'
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            return JsonResponse({'status': 'error', 'message': message}, status=429)
+        messages.error(request, message)
+        return redirect('report_list')
 
     report = get_object_or_404(Scamreports, id=report_id)
     if report.is_hidden and not request.user.is_staff:
-        return HttpResponseForbidden("This report is not available.")
+        return _forbidden(request, "This report is not available.", event='blocked hidden report encounter')
     encountered = request.session.get('encountered_reports', [])
     if report_id not in encountered:
         Scamreports.objects.filter(id=report_id).update(encounter_count=F('encounter_count') + 1)
@@ -228,7 +277,12 @@ def encounter_report(request, report_id):
 
 def report_abuse(request, report_id):
     report = get_object_or_404(Scamreports, id=report_id)
+    if report.is_hidden and not request.user.is_staff:
+        return _forbidden(request, "This report is not available.", event='blocked hidden report abuse access')
     if request.method == 'POST':
+        if _rate_limited(request, 'report_abuse', limit=5, window_seconds=900):
+            messages.error(request, 'Too many abuse reports from this address. Please try again later.')
+            return redirect('report_abuse', report_id=report.id)
         form = ReportAbuseForm(request.POST)
         if form.is_valid():
             abuse = form.save(commit=False)
@@ -243,7 +297,7 @@ def report_abuse(request, report_id):
 def report_detail(request, report_id):
     report = get_object_or_404(Scamreports.objects.prefetch_related('scam_type'), id=report_id)
     if report.is_hidden and not request.user.is_staff:
-        return HttpResponseForbidden("This report is not available.")
+        return _forbidden(request, "This report is not available.", event='blocked hidden report detail access')
     follow_form = ReportFollowForm()
     comment_form = ReportCommentForm()
     watchlist_form = WatchlistForm()
@@ -266,11 +320,18 @@ def follow_report(request, report_id):
         return HttpResponseNotAllowed(['POST'])
     report = get_object_or_404(Scamreports, id=report_id)
     if report.is_hidden and not request.user.is_staff:
-        return HttpResponseForbidden("This report is not available.")
+        return _forbidden(request, "This report is not available.", event='blocked hidden report follow access')
+    if _rate_limited(request, 'follow_report', limit=5, window_seconds=3600):
+        messages.error(request, 'Too many follow requests from this address. Please try again later.')
+        return redirect('report_detail', report_id=report.id)
     form = ReportFollowForm(request.POST)
     if form.is_valid():
-        ReportFollow.objects.get_or_create(report=report, email=form.cleaned_data['email'])
-        return render(request, 'Scam_reports/report_follow_thanks.html', {'report': report})
+        _, confirmation_sent = create_or_refresh_report_follow(report, form.cleaned_data['email'], request)
+        return render(
+            request,
+            'Scam_reports/report_follow_thanks.html',
+            {'report': report, 'confirmation_sent': confirmation_sent},
+        )
     comment_form = ReportCommentForm()
     watchlist_form = WatchlistForm()
     comments = report.comments.filter(is_approved=True).order_by('-created_at')
@@ -292,7 +353,10 @@ def add_comment(request, report_id):
         return HttpResponseNotAllowed(['POST'])
     report = get_object_or_404(Scamreports, id=report_id)
     if report.is_hidden and not request.user.is_staff:
-        return HttpResponseForbidden("This report is not available.")
+        return _forbidden(request, "This report is not available.", event='blocked hidden report comment access')
+    if _rate_limited(request, 'add_comment', limit=5, window_seconds=900):
+        messages.error(request, 'Too many comments from this address. Please try again later.')
+        return redirect('report_detail', report_id=report.id)
     form = ReportCommentForm(request.POST)
     if form.is_valid():
         comment = form.save(commit=False)
@@ -320,6 +384,8 @@ def add_watchlist(request, report_id):
     if request.method != 'POST':
         return HttpResponseNotAllowed(['POST'])
     report = get_object_or_404(Scamreports, id=report_id)
+    if report.is_hidden and not request.user.is_staff:
+        return _forbidden(request, "This report is not available.", event='blocked hidden report watchlist access')
     WatchlistItem.objects.get_or_create(
         user=request.user,
         name_or_number=report.name_or_number,
@@ -337,13 +403,17 @@ def watchlist(request):
 def digest_subscribe(request):
     if request.method != 'POST':
         return HttpResponseNotAllowed(['POST'])
+    if _rate_limited(request, 'digest_subscribe', limit=5, window_seconds=3600):
+        messages.error(request, 'Too many digest subscriptions from this address. Please try again later.')
+        return redirect('report_list')
     form = DigestSubscriptionForm(request.POST)
     if form.is_valid():
-        subscription, _ = DigestSubscription.objects.get_or_create(email=form.cleaned_data['email'])
-        if request.user.is_authenticated:
-            subscription.user = request.user
-            subscription.save(update_fields=['user'])
-        return render(request, 'Scam_reports/digest_thanks.html', {})
+        _, confirmation_sent = create_or_refresh_digest_subscription(
+            form.cleaned_data['email'],
+            request,
+            user=request.user if request.user.is_authenticated else None,
+        )
+        return render(request, 'Scam_reports/digest_thanks.html', {'confirmation_sent': confirmation_sent})
     return redirect('report_list')
 
 
@@ -355,29 +425,25 @@ def cron_weekly_digest(request):
     if not expected_secret and not settings.DEBUG:
         return JsonResponse({'status': 'error', 'message': 'CRON_SECRET is not configured.'}, status=500)
 
+    if not _request_ip_allowed(request, 'CRON_ALLOWED_IPS'):
+        return _forbidden(request, 'Invalid cron source.', event='blocked cron ip')
+
     if expected_secret:
         authorization = request.headers.get('Authorization', '')
         if authorization != f'Bearer {expected_secret}':
-            return HttpResponseForbidden('Invalid cron authorization.')
+            return _forbidden(request, 'Invalid cron authorization.', event='blocked cron auth')
 
     result = send_weekly_digest()
     status_code = 200 if result['status'] in {'sent', 'noop'} else 500
     return JsonResponse(result, status=status_code)
 
 
-@csrf_exempt
+@login_required
 def deploy_init(request):
     if request.method != 'POST':
         return HttpResponseNotAllowed(['POST'])
-
-    expected_secret = config('CRON_SECRET', default='').strip()
-    if not expected_secret and not settings.DEBUG:
-        return JsonResponse({'status': 'error', 'message': 'CRON_SECRET is not configured.'}, status=500)
-
-    if expected_secret:
-        authorization = request.headers.get('Authorization', '')
-        if authorization != f'Bearer {expected_secret}':
-            return HttpResponseForbidden('Invalid init authorization.')
+    if not request.user.is_staff:
+        return _forbidden(request, STAFF_FORBIDDEN_MESSAGE, event='blocked deploy_init access')
 
     outputs = {}
     try:
@@ -417,7 +483,7 @@ def deploy_init(request):
 @login_required
 def moderation_queue(request):
     if not request.user.is_staff:
-        return HttpResponseForbidden("You don't have permission to view this page.")
+        return _forbidden(request, "You don't have permission to view this page.", event='blocked moderation queue access')
     pending_reports = Scamreports.objects.filter(is_hidden=True).order_by('-date_reported')[:50]
     open_abuse = ReportAbuse.objects.filter(status='open').order_by('-created_at')[:50]
     return render(request, 'Scam_reports/moderation_queue.html', {'pending_reports': pending_reports, 'open_abuse': open_abuse})
@@ -432,7 +498,7 @@ def approve_report(request, report_id):
     if request.method != 'POST':
         return HttpResponseNotAllowed(['POST'])
     if not request.user.is_staff:
-        return HttpResponseForbidden("You don't have permission to do that.")
+        return _forbidden(request, STAFF_FORBIDDEN_MESSAGE, event='blocked approve_report access')
     report = get_object_or_404(Scamreports, id=report_id)
     report.is_hidden = False
     report.is_verified = True
@@ -445,7 +511,7 @@ def reject_report(request, report_id):
     if request.method != 'POST':
         return HttpResponseNotAllowed(['POST'])
     if not request.user.is_staff:
-        return HttpResponseForbidden("You don't have permission to do that.")
+        return _forbidden(request, STAFF_FORBIDDEN_MESSAGE, event='blocked reject_report access')
     report = get_object_or_404(Scamreports, id=report_id)
     report.is_hidden = True
     report.is_verified = False
@@ -455,17 +521,24 @@ def reject_report(request, report_id):
 def thank_you(request):
      return render (request , "thank_you.html")
 
+@login_required
 def mark_resolved(request, report_id):
+    if request.method != 'POST':
+        return HttpResponseNotAllowed(['POST'])
     report = get_object_or_404(Scamreports, id=report_id)
     if request.user == report.user or request.user.is_staff:
+        form = ResolutionForm(request.POST)
+        if not form.is_valid():
+            messages.error(request, "Resolution note must be 120 characters or fewer.")
+            return redirect('user_dashboard')
         report.is_resolved = True
-        report.resolution_reason = request.POST.get('resolution_reason', '')
+        report.resolution_reason = form.cleaned_data['resolution_reason']
         report.resolved_at = timezone.now()
         report.save()
         messages.success(request, "Report marked as resolved.")
         return redirect('report_list')
     else:
-        return HttpResponseForbidden("You don't have permission to do that.")
+        return _forbidden(request, STAFF_FORBIDDEN_MESSAGE, event='blocked mark_resolved access')
     
 def register(request):
     if request.method == 'POST':
@@ -505,7 +578,26 @@ def edit_report(request, pk):
 
     return render(request, 'edit_report.html', {'form': form})
 
+def verify_report_follow(request, token):
+    follow = verify_report_follow_token(token)
+    if not follow:
+        return render(request, 'Scam_reports/verification_invalid.html', {'verification_target': 'report alert'}, status=404)
+    return render(request, 'Scam_reports/report_follow_confirmed.html', {'report': follow.report})
+
+
+def verify_digest_subscription(request, token):
+    subscription = verify_digest_subscription_token(token)
+    if not subscription:
+        return render(request, 'Scam_reports/verification_invalid.html', {'verification_target': 'weekly digest'}, status=404)
+    return render(request, 'Scam_reports/digest_confirmed.html', {'subscription': subscription})
+
+
+@login_required
 def create_google_socialapp(request):
+    if request.method != 'POST':
+        return HttpResponseNotAllowed(['POST'])
+    if not request.user.is_staff:
+        return _forbidden(request, STAFF_FORBIDDEN_MESSAGE, event='blocked create_google_socialapp access')
     ensure_google_social_app()
     return HttpResponse('Google SocialApp synced.')
 

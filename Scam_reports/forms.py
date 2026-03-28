@@ -1,6 +1,7 @@
 
 from django import forms
 import os
+from django.utils.html import strip_tags
 from .models import (
     Scamreports,
     Scamtype,
@@ -10,6 +11,13 @@ from .models import (
     WatchlistItem,
     DigestSubscription,
 )
+
+
+def _clean_plain_text(value):
+    if value in (None, ''):
+        return value
+    return strip_tags(str(value)).replace('\x00', '').strip()
+
 
 class Scamreportform(forms.ModelForm):
     scam_type = forms.ModelMultipleChoiceField(
@@ -29,6 +37,18 @@ class Scamreportform(forms.ModelForm):
             'evidence_file',
             'scam_type',
         ]
+
+    def clean_name_or_number(self):
+        return _clean_plain_text(self.cleaned_data['name_or_number'])
+
+    def clean_social_media(self):
+        return _clean_plain_text(self.cleaned_data['social_media'])
+
+    def clean_description(self):
+        return _clean_plain_text(self.cleaned_data['description'])
+
+    def clean_evidence_text(self):
+        return _clean_plain_text(self.cleaned_data.get('evidence_text'))
 
     def clean_evidence_file(self):
         evidence_file = self.cleaned_data.get('evidence_file')
@@ -64,6 +84,12 @@ class ReportAbuseForm(forms.ModelForm):
             'details': forms.Textarea(attrs={'rows': 4})
         }
 
+    def clean_email(self):
+        return self.cleaned_data.get('email', '').strip().lower()
+
+    def clean_details(self):
+        return _clean_plain_text(self.cleaned_data.get('details'))
+
 
 class ReportFollowForm(forms.ModelForm):
     class Meta:
@@ -72,6 +98,9 @@ class ReportFollowForm(forms.ModelForm):
         widgets = {
             'email': forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'you@example.com'})
         }
+
+    def clean_email(self):
+        return self.cleaned_data['email'].strip().lower()
 
 
 class ReportCommentForm(forms.ModelForm):
@@ -82,6 +111,12 @@ class ReportCommentForm(forms.ModelForm):
             'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Your name (optional)'}),
             'message': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Add a public comment...'}),
         }
+
+    def clean_name(self):
+        return _clean_plain_text(self.cleaned_data.get('name'))
+
+    def clean_message(self):
+        return _clean_plain_text(self.cleaned_data['message'])
 
 
 class WatchlistForm(forms.ModelForm):
@@ -97,6 +132,16 @@ class DigestSubscriptionForm(forms.ModelForm):
         widgets = {
             'email': forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'you@example.com'})
         }
+
+    def clean_email(self):
+        return self.cleaned_data['email'].strip().lower()
+
+
+class ResolutionForm(forms.Form):
+    resolution_reason = forms.CharField(required=False, max_length=120)
+
+    def clean_resolution_reason(self):
+        return _clean_plain_text(self.cleaned_data.get('resolution_reason', ''))
 
 
 
