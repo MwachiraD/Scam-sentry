@@ -40,10 +40,14 @@ class ContentSecurityPolicyMiddleware:
             'img-src': ["'self'", 'blob:', 'data:', 'https:'],
             'object-src': ["'none'"],
             'script-src': [
-                "'self'",
+               
                 f"'nonce-{nonce}'",
-                'https://cdn.jsdelivr.net',
-                'https://plausible.io',
+                "'unsafe-inline'",
+                "'unsafe-eval'",
+                "'strict-dynamic'",
+                'https:',
+                'http:',
+
             ],
             'style-src': [
                 "'self'",
