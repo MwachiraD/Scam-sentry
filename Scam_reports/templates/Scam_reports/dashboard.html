@@ -11,6 +11,50 @@
   <a href="{% url 'report_scam' %}" class="btn btn-accent">Submit New Report</a>
 </div>
 
+<div class="row g-3 mb-4">
+  <div class="col-md-3">
+    <div class="card p-3 reveal h-100">
+      <div class="text-muted small text-uppercase">Submitted</div>
+      <div class="display-6 mb-0">{{ dashboard_stats.submitted_reports }}</div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card p-3 reveal h-100">
+      <div class="text-muted small text-uppercase">Pending review</div>
+      <div class="display-6 mb-0">{{ dashboard_stats.pending_review }}</div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card p-3 reveal h-100">
+      <div class="text-muted small text-uppercase">Resolved</div>
+      <div class="display-6 mb-0">{{ dashboard_stats.resolved_reports }}</div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card p-3 reveal h-100">
+      <div class="text-muted small text-uppercase">Watchlist items</div>
+      <div class="display-6 mb-0">{{ dashboard_stats.watchlist_items }}</div>
+    </div>
+  </div>
+</div>
+
+{% if watchlist_preview %}
+  <div class="card p-3 mb-4 reveal">
+    <h4 class="mb-2">Watchlist snapshot</h4>
+    <p class="text-muted small">Handles and numbers you are currently tracking.</p>
+    <div class="row g-2">
+      {% for item in watchlist_preview %}
+        <div class="col-md-6 col-lg-4">
+          <div class="border rounded-4 p-3 h-100">
+            <div class="fw-bold">{{ item.name_or_number }}</div>
+            <div class="text-muted small">{{ item.social_media|default:"General" }}</div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+{% endif %}
+
 {% if reports %}
   <div class="row">
     {% for report in reports %}
@@ -33,6 +77,8 @@
               <p><strong>Evidence File:</strong>
                 <a href="{{ report.evidence_file.url }}" target="_blank" class="btn btn-sm btn-outline-secondary">View Evidence</a>
               </p>
+            {% elif report.evidence_text %}
+              <p><span class="badge bg-light text-dark border">Text evidence attached</span></p>
             {% endif %}
 
             <p>

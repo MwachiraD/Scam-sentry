@@ -12,7 +12,7 @@ from datetime import timedelta
 from difflib import get_close_matches
 from django.core.management import call_command
 from django.core.cache import cache
-from django.db.models import Q, F
+from django.db.models import Count, Q, F
 from django.http import HttpResponse, HttpResponseForbidden, JsonResponse, HttpResponseNotAllowed
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
@@ -182,6 +182,7 @@ def report_list(request):
     reports = Scamreports.objects.all().prefetch_related('scam_type')
     if not request.user.is_staff:
         reports = reports.filter(is_hidden=False)
+    accessible_reports = reports
     query = request.GET.get('q')
     if query and _rate_limited(request, 'search', limit=30, window_seconds=60):
         return HttpResponse("Too many searches. Please wait a minute and try again.", status=429)
@@ -235,6 +236,37 @@ def report_list(request):
         )
         cache.set('trending_reports', trending_reports, 300)
 
+    analytics_cache_key = f"report_insights:{'staff' if request.user.is_staff else 'public'}"
+    analytics = cache.get(analytics_cache_key)
+    if analytics is None:
+        report_filter = Q()
+        if not request.user.is_staff:
+            report_filter = Q(reports__is_hidden=False)
+
+        analytics = {
+            'overview': {
+                'total_reports': accessible_reports.count(),
+                'verified_reports': accessible_reports.filter(is_verified=True).count(),
+                'resolved_reports': accessible_reports.filter(is_resolved=True).count(),
+                'fresh_reports': accessible_reports.filter(
+                    date_reported__gte=timezone.now() - timedelta(days=7)
+                ).count(),
+            },
+            'top_channels': list(
+                accessible_reports.values('social_media')
+                .annotate(total=Count('id'))
+                .order_by('-total', 'social_media')[:5]
+            ),
+            'top_scam_types': list(
+                Scamtype.objects.annotate(
+                    report_total=Count('reports', filter=report_filter, distinct=True)
+                )
+                .filter(report_total__gt=0)
+                .order_by('-report_total', 'name')[:5]
+            ),
+        }
+        cache.set(analytics_cache_key, analytics, 300)
+
     context = {
         'reports': reports,
         'filter_option': filter_option,
@@ -244,6 +276,7 @@ def report_list(request):
         'query': query,
         'suggestion': suggestion,
         'trending_reports': trending_reports,
+        'analytics': analytics,
         'digest_form': DigestSubscriptionForm(),
     }
     return render(request, 'Scam_reports/report_list.html', context)
@@ -553,8 +586,24 @@ def register(request):
 
 @login_required
 def user_dashboard(request):
-    user_reports = Scamreports.objects.filter(user=request.user)
-    return render(request, 'Scam_reports/dashboard.html', {'reports': user_reports})
+    user_reports = Scamreports.objects.filter(user=request.user).prefetch_related('scam_type').order_by('-date_reported')
+    dashboard_stats = {
+        'submitted_reports': user_reports.count(),
+        'pending_review': user_reports.filter(is_hidden=True).count(),
+        'verified_reports': user_reports.filter(is_verified=True).count(),
+        'resolved_reports': user_reports.filter(is_resolved=True).count(),
+        'watchlist_items': WatchlistItem.objects.filter(user=request.user).count(),
+    }
+    watchlist_preview = WatchlistItem.objects.filter(user=request.user).order_by('-created_at')[:5]
+    return render(
+        request,
+        'Scam_reports/dashboard.html',
+        {
+            'reports': user_reports,
+            'dashboard_stats': dashboard_stats,
+            'watchlist_preview': watchlist_preview,
+        },
+    )
 
 @login_required
 def edit_report(request, pk):

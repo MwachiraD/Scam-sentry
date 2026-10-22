@@ -137,6 +137,14 @@ class SecurityHardeningTests(TestCase):
         self.assertIn('Content-Security-Policy', response.headers)
         self.assertIn('nonce-', response.headers['Content-Security-Policy'])
         self.assertContains(response, 'nonce="')
+        self.assertContains(response, 'Most targeted channels')
+
+    def test_dashboard_shows_summary_cards(self):
+        self.client.force_login(self.owner)
+        response = self.client.get(reverse('user_dashboard'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Pending review')
+        self.assertContains(response, 'Watchlist items')
 
     def test_password_reset_page_uses_custom_template(self):
         response = self.client.get(reverse('account_reset_password'))

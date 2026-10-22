@@ -2,7 +2,10 @@ from datetime import timedelta
 
 from allauth.account.models import EmailAddress
 from django.contrib.auth import get_user_model
+from django.core.files.base import ContentFile
 from django.core.management.base import BaseCommand
+from django.core.files.storage import default_storage
+from django.utils.text import slugify
 from django.utils import timezone
 
 from feedback.models import Feedback
@@ -115,6 +118,7 @@ DEMO_REPORTS = [
             {'name': 'Anonymous', 'message': 'They switched to Telegram after I asked for the company office.', 'is_approved': True},
         ],
         'follows': ['alerts+jobs@scamsentry.local'],
+        'attach_evidence_file': True,
     },
     {
         'owner': 'daniel',
@@ -133,6 +137,7 @@ DEMO_REPORTS = [
             {'name': 'Mary', 'message': 'The link copied the official branding almost exactly.', 'is_approved': True},
         ],
         'follows': ['alerts+telco@scamsentry.local'],
+        'attach_evidence_file': True,
     },
     {
         'owner': 'aisha',
@@ -152,6 +157,7 @@ DEMO_REPORTS = [
             {'name': 'Review queue', 'message': 'Please hide this comment', 'is_approved': False},
         ],
         'follows': ['alerts+loans@scamsentry.local'],
+        'attach_evidence_file': True,
     },
     {
         'owner': None,
@@ -170,6 +176,7 @@ DEMO_REPORTS = [
             {'name': 'Otis', 'message': 'Classic pump-and-dump group behavior.', 'is_approved': True},
         ],
         'follows': ['alerts+crypto@scamsentry.local'],
+        'attach_evidence_file': True,
     },
     {
         'owner': 'daniel',
@@ -207,6 +214,7 @@ DEMO_REPORTS = [
         'abuse_reports': [
             {'reason': 'false_report', 'email': 'reviewer@scamsentry.local', 'details': 'Asked team to double-check supplier evidence.', 'status': 'open'},
         ],
+        'attach_evidence_file': True,
     },
     {
         'owner': 'aisha',
@@ -225,6 +233,7 @@ DEMO_REPORTS = [
             {'name': 'Brian', 'message': 'They knew my real area name, so the message felt legitimate.', 'is_approved': True},
         ],
         'follows': [],
+        'attach_evidence_file': True,
     },
     {
         'owner': None,
@@ -243,6 +252,7 @@ DEMO_REPORTS = [
             {'name': 'Faith', 'message': 'They reused old news photos to make the appeal look real.', 'is_approved': True},
         ],
         'follows': ['alerts+charity@scamsentry.local'],
+        'attach_evidence_file': True,
     },
     {
         'owner': 'brian',
@@ -262,6 +272,7 @@ DEMO_REPORTS = [
             {'name': 'Paul', 'message': 'They followed up with a call pretending to be from support.', 'is_approved': True},
         ],
         'follows': ['alerts+kra@scamsentry.local'],
+        'attach_evidence_file': True,
     },
     {
         'owner': 'grace',
@@ -280,6 +291,7 @@ DEMO_REPORTS = [
             {'name': 'Eunice', 'message': 'They refused in-person viewing unless I sent a deposit first.', 'is_approved': True},
         ],
         'follows': ['alerts+rentals@scamsentry.local'],
+        'attach_evidence_file': True,
     },
     {
         'owner': 'victor',
@@ -298,6 +310,7 @@ DEMO_REPORTS = [
             {'name': 'Tom', 'message': 'They asked for mobile money instead of an official portal.', 'is_approved': True},
         ],
         'follows': ['alerts+aid@scamsentry.local'],
+        'attach_evidence_file': True,
     },
     {
         'owner': 'caroline',
@@ -316,6 +329,7 @@ DEMO_REPORTS = [
             {'name': 'Sam', 'message': 'Same scam but they asked me to forward a security SMS.', 'is_approved': True},
         ],
         'follows': ['alerts+mpesa@scamsentry.local'],
+        'attach_evidence_file': True,
     },
     {
         'owner': 'aisha',
@@ -353,6 +367,7 @@ DEMO_REPORTS = [
             {'name': 'Lee', 'message': 'They kept sending edited screenshots of courier systems.', 'is_approved': True},
         ],
         'follows': ['alerts+devices@scamsentry.local'],
+        'attach_evidence_file': True,
     },
     {
         'owner': 'brian',
@@ -371,6 +386,7 @@ DEMO_REPORTS = [
             {'name': 'Mercy', 'message': 'They switched from visa to scholarship language halfway through the chat.', 'is_approved': True},
         ],
         'follows': ['alerts+travel@scamsentry.local'],
+        'attach_evidence_file': True,
     },
     {
         'owner': 'grace',
@@ -389,6 +405,7 @@ DEMO_REPORTS = [
             {'name': 'Peter', 'message': 'The message looked real until I checked the sender ID closely.', 'is_approved': True},
         ],
         'follows': ['alerts+bank@scamsentry.local'],
+        'attach_evidence_file': True,
     },
     {
         'owner': 'victor',
@@ -405,6 +422,9 @@ DEMO_REPORTS = [
         'resolution_reason': '',
         'comments': [],
         'follows': [],
+        'abuse_reports': [
+            {'reason': 'other', 'email': 'bursary-watch@scamsentry.local', 'details': 'Moderator note: watch for more posts using the same payment number.', 'status': 'open'},
+        ],
     },
     {
         'owner': 'caroline',
@@ -426,6 +446,7 @@ DEMO_REPORTS = [
         'abuse_reports': [
             {'reason': 'other', 'email': 'moderation@scamsentry.local', 'details': 'Keep an eye on this thread because more victim details may arrive.', 'status': 'reviewing'},
         ],
+        'attach_evidence_file': True,
     },
 ]
 
@@ -444,10 +465,68 @@ class Command(BaseCommand):
             default='DemoAdmin123!',
             help='Password for the demo admin user.',
         )
+        parser.add_argument(
+            '--with-evidence-files',
+            action='store_true',
+            help='Generate synthetic PDF evidence files. Use this locally or with durable object storage configured.',
+        )
+
+    def _escape_pdf_text(self, value):
+        return value.replace('\\', '\\\\').replace('(', '\\(').replace(')', '\\)')
+
+    def _build_demo_pdf(self, report):
+        lines = [
+            f'Report: {report.name_or_number}',
+            f'Channel: {report.social_media}',
+            f'Generated: {timezone.now().strftime("%Y-%m-%d %H:%M UTC")}',
+            f'Summary: {report.evidence_text or report.description[:90]}',
+        ]
+        stream_lines = ['BT', '/F1 16 Tf', '40 760 Td']
+        for index, line in enumerate(lines):
+            if index:
+                stream_lines.append('0 -22 Td')
+            stream_lines.append(f'({self._escape_pdf_text(line)}) Tj')
+        stream_lines.append('ET')
+        stream = '\n'.join(stream_lines).encode('utf-8')
+
+        objects = [
+            b'1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n',
+            b'2 0 obj\n<< /Type /Pages /Count 1 /Kids [3 0 R] >>\nendobj\n',
+            b'3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 5 0 R >> >> /Contents 4 0 R >>\nendobj\n',
+            f'4 0 obj\n<< /Length {len(stream)} >>\nstream\n'.encode('utf-8') + stream + b'\nendstream\nendobj\n',
+            b'5 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\n',
+        ]
+
+        pdf = bytearray(b'%PDF-1.4\n')
+        offsets = [0]
+        for obj in objects:
+            offsets.append(len(pdf))
+            pdf.extend(obj)
+        xref_offset = len(pdf)
+        pdf.extend(f'xref\n0 {len(objects) + 1}\n'.encode('utf-8'))
+        pdf.extend(b'0000000000 65535 f \n')
+        for offset in offsets[1:]:
+            pdf.extend(f'{offset:010d} 00000 n \n'.encode('utf-8'))
+        pdf.extend(
+            (
+                f'trailer\n<< /Size {len(objects) + 1} /Root 1 0 R >>\n'
+                f'startxref\n{xref_offset}\n%%EOF\n'
+            ).encode('utf-8')
+        )
+        return bytes(pdf)
+
+    def _attach_demo_evidence(self, report):
+        relative_name = f"demo/{slugify(report.name_or_number) or report.pk}.pdf"
+        generated_name = report.evidence_file.field.generate_filename(report, relative_name)
+        if default_storage.exists(generated_name):
+            default_storage.delete(generated_name)
+        report.evidence_file.save(relative_name, ContentFile(self._build_demo_pdf(report)), save=False)
+        report.save(update_fields=['evidence_file'])
 
     def handle(self, *args, **options):
         password = options['password']
         admin_password = options['admin_password']
+        with_evidence_files = options['with_evidence_files']
         now = timezone.now()
 
         scam_types = {
@@ -501,6 +580,8 @@ class Command(BaseCommand):
             )
             report.refresh_from_db()
             report.scam_type.set([scam_types[name] for name in fixture['scam_types']])
+            if with_evidence_files and fixture.get('attach_evidence_file'):
+                self._attach_demo_evidence(report)
             report_count += 1
 
             for comment_fixture in fixture.get('comments', []):

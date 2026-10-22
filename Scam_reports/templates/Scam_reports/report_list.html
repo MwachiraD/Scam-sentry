@@ -34,6 +34,72 @@
 </div>
 {% endif %}
 
+<div class="row g-3 mb-4">
+  <div class="col-md-3">
+    <div class="card p-3 h-100 reveal">
+      <div class="text-muted small text-uppercase">Accessible reports</div>
+      <div class="display-6 mb-0">{{ analytics.overview.total_reports }}</div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card p-3 h-100 reveal">
+      <div class="text-muted small text-uppercase">Reviewed</div>
+      <div class="display-6 mb-0">{{ analytics.overview.verified_reports }}</div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card p-3 h-100 reveal">
+      <div class="text-muted small text-uppercase">Resolved</div>
+      <div class="display-6 mb-0">{{ analytics.overview.resolved_reports }}</div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card p-3 h-100 reveal">
+      <div class="text-muted small text-uppercase">Last 7 days</div>
+      <div class="display-6 mb-0">{{ analytics.overview.fresh_reports }}</div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-lg-6">
+    <div class="card p-3 reveal h-100">
+      <h4 class="mb-2">Most targeted channels</h4>
+      <p class="text-muted small">Where reports are clustering right now.</p>
+      {% if analytics.top_channels %}
+        <div class="d-flex flex-column gap-2">
+          {% for item in analytics.top_channels %}
+            <div class="d-flex justify-content-between align-items-center border rounded-4 px-3 py-2">
+              <span>{{ item.social_media }}</span>
+              <span class="badge bg-dark text-light">{{ item.total }}</span>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p class="text-muted">No channel data yet.</p>
+      {% endif %}
+    </div>
+  </div>
+  <div class="col-lg-6">
+    <div class="card p-3 reveal h-100">
+      <h4 class="mb-2">Most common scam types</h4>
+      <p class="text-muted small">The categories generating the most reports.</p>
+      {% if analytics.top_scam_types %}
+        <div class="d-flex flex-column gap-2">
+          {% for scam_type in analytics.top_scam_types %}
+            <div class="d-flex justify-content-between align-items-center border rounded-4 px-3 py-2">
+              <span>{{ scam_type.name }}</span>
+              <span class="badge bg-warning text-dark">{{ scam_type.report_total }}</span>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p class="text-muted">No scam type data yet.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
 <form method="GET" class="card p-3 mb-4 reveal">
   <div class="row g-3 align-items-center">
     <div class="col-md-6">
@@ -104,6 +170,8 @@
 
         {% if report.evidence_file %}
           <p class="mt-2"><a href="{{ report.evidence_file.url }}" target="_blank" class="btn btn-sm btn-outline-secondary">View Evidence</a></p>
+        {% elif report.evidence_text %}
+          <p><span class="badge bg-light text-dark border">Text evidence available</span></p>
         {% endif %}
 
         {% if not report.user %}

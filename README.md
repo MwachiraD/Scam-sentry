@@ -25,6 +25,7 @@ Build a community-driven scam intelligence system
 
 - Report scams with name/number, social media handle, description, and evidence
 - Search reports by name, number, or handle
+- Browse report analytics for common scam channels and categories
 - User accounts with email/password or Google OAuth
 - Password reset flow with explicit rate limiting
 - Personal dashboard to view and edit reports
@@ -74,6 +75,12 @@ Note: If you see `decouple.UndefinedValueError: SECRET_KEY not found`, it means 
 python manage.py migrate
 python manage.py seed_scam_types
 python manage.py seed_demo_data
+```
+
+If you want locally generated PDF evidence attached to the demo reports, run:
+
+```bash
+python manage.py seed_demo_data --with-evidence-files
 ```
 
 5) Start the server
@@ -246,5 +253,6 @@ AWS_QUERYSTRING_AUTH=True
 
 - The seed command is idempotent and can be run multiple times.
 - `seed_demo_data` is also idempotent and refreshes the same demo users and sample reports.
+- `seed_demo_data --with-evidence-files` is intended for local development or durable object storage setups. Do not rely on local filesystem media for production deployments.
 - For Google OAuth, configure the authorized redirect URI in the Google Cloud Console.
 - Digest subscriptions and report-follow alerts now use email confirmation before activation.
